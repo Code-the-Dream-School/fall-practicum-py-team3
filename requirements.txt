@@ -1,0 +1,15 @@
+pandas>=2.2
+pyarrow>=16.0
+requests>=2.32
+pydantic>=2.7
+pydantic-settings>=2.3
+python-dotenv>=1.0
+prefect>=3.0
+azure-storage-blob>=12.26
+duckdb>=1.0
+sqlalchemy>=2.0
+alembic>=1.13
+psycopg[binary]>=3.2
+streamlit>=1.36
+plotly>=5.22
+pytest>=8.2

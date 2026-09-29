@@ -1,0 +1,21 @@
+name: AIR ticket check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title-must-have-air-ticket:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "PR title: $PR_TITLE"
+          echo "$PR_TITLE" | grep -Eq 'AIR-[0-9]+'
