@@ -85,30 +85,11 @@ Story points are relative estimates of a task's effort, complexity, and uncertai
 
 Aim for tasks worth no more than **2–3 story points**. If a milestone is larger, break it into multiple bite-sized tasks that can be completed, reviewed, and moved across the board independently.
 
-## Team management
-
-Each team will include **4 students** and **1–2 mentors**. There are no assigned technical roles because the practicum is designed to give every student hands-on experience with every part of the project. In your first days, your group should:
-
-- choose a student team lead to help coordinate communication, meetings, and progress
-- consider choosing a scribe to capture meeting notes, decisions, blockers, and action items
-- decide where the team will communicate between meetings
-- schedule a weekly stand-up, or a second short check-in when useful
-
-The Code the Dream week begins on **Wednesday** with the instructor session, so try to hold your main stand-up on Thursday or shortly afterward. Keep it brief: share what you completed, what you will work on next, and what is blocking you. With two-week sprints, use the middle of each sprint as a checkpoint: are you on track to finish the Must items?
-
-The team lead is a coordinator, not the only decision-maker or the owner of the most important work. Everyone should participate in planning, implementation, testing, review, and documentation throughout the practicum.
-
 ## Your mentors
 
 Mentors will be intentionally hands-off at first so the team has room to make decisions and learn by doing. They will step in when students ask for help or when they foresee a problem, blocker, or delay that could put the project at risk.
 
 Bring mentors clear questions, explain what the team has already tried, and involve them early when a blocker is affecting progress.
-
-## Set up the team repository
-
-One student should create the team's blank GitHub repository and connect the Code the Dream `city-air-tracker-student` repository as `upstream`. After the initial setup, every student should clone the new team repository and confirm that they can access it.
-
-Follow the [Team repository setup instructions](../README.md#team-repository-setup-sprint-0) in the project README.
 
 ## Before Sprint 1 checklist
 

@@ -3,4 +3,4 @@
 
 ## Additional docs
 
-Browse [Docs table of Contents](./docs/docs_toc.md) for the full categorized index.
+[See here](./docs/docs_toc.md) for the full categorized index of documents.
