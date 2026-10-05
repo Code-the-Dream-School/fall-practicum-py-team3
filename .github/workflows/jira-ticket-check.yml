@@ -1,4 +1,4 @@
-name: AIR ticket check
+name: JIRA ticket check
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  pr-title-must-have-air-ticket:
+  pr-title-must-have-jira-ticket:
     runs-on: ubuntu-latest
     steps:
       - name: Validate PR title
@@ -18,4 +18,4 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           echo "PR title: $PR_TITLE"
-          echo "$PR_TITLE" | grep -Eq 'AIR-[0-9]+'
+          echo "$PR_TITLE" | grep -Eq 'DREAM-[0-9]+'
