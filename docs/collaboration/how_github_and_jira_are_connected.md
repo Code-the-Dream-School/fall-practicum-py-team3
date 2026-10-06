@@ -1,10 +1,13 @@
 # How are Github and JIRA connected in practice?
 
 ## Definitions
-Epic = the big goal (e.g. "Implement User Login"). You never code an epic directly; it's a container that tracks progress across many stories.
-Story = a smaller piece of work that is typically a complete feature ("I can log in"). It's the natural unit of planning.
-Subtask = optional. Only split a story into subtasks when it's too big to finish in one sitting. A small story is its own unit of work.
-Branch/PR = the unit of doing. Whatever JIRA item you're actually working on (story or subtask), that's what gets one branch and one PR. The ticket ID in the branch name and PR title ties it all together. It lets tools, teammates, and future-you figure out why a code change exists.
+**Epic** = the big goal (e.g. "Implement User Login"). You never code an epic directly; it's a container that tracks progress across many stories.
+
+**Story** = a smaller piece of work that is typically a complete feature ("I can log in"). It's the natural unit of planning.
+
+**Subtask** = optional. Only split a story into subtasks when it's too big to finish in one sitting. A small story is its own unit of work.
+
+**Branch/PR** = the unit of doing. Whatever JIRA item you're actually working on (story or subtask), that's what gets one branch and one PR. The ticket ID in the branch name and PR title ties it all together. It lets tools, teammates, and future-you figure out why a code change exists.
 
 
 ## Diagram
