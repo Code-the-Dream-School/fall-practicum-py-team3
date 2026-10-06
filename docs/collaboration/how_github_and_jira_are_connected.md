@@ -8,6 +8,8 @@ Branch/PR = the unit of doing. Whatever JIRA item you're actually working on (st
 
 
 ## Diagram
+
+```
 +-------------------------+
 |EPIC (JIRA):             |
 |"User Login"             |
@@ -65,3 +67,4 @@ Branch/PR = the unit of doing. Whatever JIRA item you're actually working on (st
 |Every PR lands here      |
 |after review + approval. |
 +-------------------------+
+```
