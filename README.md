@@ -1,6 +1,5 @@
+## Reference for Students
 
-## Setup instructions are in [SETUP.md](./SETUP.md).
+- Setup instructions are in [SETUP.md](./SETUP.md) in the main directory.
 
-## Additional docs
-
-[See here](./docs/docs_toc.md) for the full categorized index of documents.
+- All other reference docs are in the `docs` directory. There is a categorized index of documents [maintained here](./docs/docs_toc.md).

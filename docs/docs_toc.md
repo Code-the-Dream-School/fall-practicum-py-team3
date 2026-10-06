@@ -16,7 +16,7 @@ Use these docs when onboarding to the repo, learning the workflow, reviewing pul
 - [Github feature branch and PR guide](./collaboration/github_feature_branch_pr_guide.md)
 - [PR review best practices](./collaboration/pr_review_best_practices.md)
 - [What is a data pipeline](./collaboration/what_is_a_data_pipeline.md)
-- [Postman Installation & Guide (pdf)](./collaboration/Postman Installation & Usage Guide.pdf)
+- [Postman Installation & Guide pdf](./collaboration/Postman Installation & Usage Guide.pdf)
 
 ## Architecture
 
