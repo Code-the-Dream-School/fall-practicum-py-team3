@@ -1,0 +1,17 @@
+import requests, os
+import pandas as pd
+from dotenv import load_dotenv
+
+# Load in .env
+load_dotenv()
+
+# Assign .env variables
+lat = os.getenv("LAT")
+lon = os.getenv("LON")
+start = os.getenv("START")
+end = os.getenv("END")
+api = os.getenv("API_KEY")
+
+# Fetch historical air pollution data
+response = requests.get("http://api.openweathermap.org/data/2.5/air_pollution/history?lat={lat}&lon={lon}&start={start}&end={end}&appid={api}")
+data = response.json()    # parse the JSON body into Python objects
