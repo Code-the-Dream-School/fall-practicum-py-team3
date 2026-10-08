@@ -30,11 +30,12 @@ def mock_extract(city: City):
         "appid": api
         }
     )
-    data = response.json()    # parse the JSON body into Python objects
-    if response.status_code == 200:   
+   
+    if response.status_code == 200: 
+        data = response.json()    # parse the JSON body into Python objects
         return data
     else:
-        return 'No data available'
+        response.raise_for_status()
 
 if __name__ == '__main__':
     print(mock_extract(city))
