@@ -1,6 +1,6 @@
 import requests, os, json
 import pandas as pd
-# from dotenv import load_dotenv
+from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import unittest
 
@@ -10,6 +10,13 @@ class Settings(BaseSettings):
         
 settings = Settings()
 
+class City(BaseModel):
+    LAT: float
+    LON: float
+    START: int
+    END: int
+    
+city = City()
 
 def mock_extract(lat, lon, start, end):
     # Assign .env variable
