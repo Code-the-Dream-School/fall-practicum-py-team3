@@ -17,20 +17,19 @@ class City(BaseModel):
     
 city = City(LAT=38.9,LON=77.04,START=1606488670,END=1606747870)
 
-def mock_extract(lat, lon, start, end):
-
-    
+def mock_extract(city: City):
     # Assign .env variable
     api = settings.API_KEY
     # Fetch historical air pollution data
-    response = requests.get(f"http://api.openweathermap.org/data/2.5/air_pollution/history?lat={lat}&lon={lon}&start={start}&end={end}&appid={api}",
-                             params={
-                                "lat": city.LAT,
-                                "lon": city.LON,
-                                "start": city.START,
-                                "end": city.END 
-                             }
-                            )
+    response = requests.get(f"http://api.openweathermap.org/data/2.5/air_pollution/history",
+        params={
+        "lat": city.LAT,
+        "lon": city.LON,
+        "start": city.START,
+        "end": city.END,
+        "appid": api
+        }
+    )
     data = response.json()    # parse the JSON body into Python objects
     if response.status_code == 200:   
         return data
@@ -38,4 +37,4 @@ def mock_extract(lat, lon, start, end):
         return 'No data available'
 
 if __name__ == '__main__':
-    print(mock_extract(38.9,77.04,1606488670,1606747870))
+    print(mock_extract(city))
