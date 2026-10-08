@@ -21,7 +21,7 @@ def mock_extract():
     if response.status_code == 200:   
         return data
     else:
-        data = 'No data available'
+        return 'No data available'
         
     return data
 
