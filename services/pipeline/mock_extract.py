@@ -34,6 +34,8 @@ def mock_extract(city: City):
     if response.status_code == 200: 
         data = response.json()    # parse the JSON body into Python objects
         return data
+    if response.status_code == 400 or response.status_code == 401 or response.status_code == 500:
+        response.raise_for_status()
     else:
         response.raise_for_status()
 
