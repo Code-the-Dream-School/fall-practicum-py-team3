@@ -1,17 +1,26 @@
 import requests, os, json
 import pandas as pd
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
+from pydantic_settings import BaseSettings, SettingsConfigDict
 import unittest
 
-# Load in .env
-load_dotenv()
+class Settings(BaseSettings):
+    LAT: float
+    LON: float
+    START: int
+    END: int
+    API_KEY: str
 
+
+    model_config = SettingsConfigDict(env_file="../../.env")
+        
+settings = Settings()
 # Assign .env variables
-lat = os.getenv("LAT")
-lon = os.getenv("LON")
-start = os.getenv("START")
-end = os.getenv("END")
-api = os.getenv("API_KEY")
+lat = settings.LAT
+lon = settings.LON
+start = settings.START
+end = settings.END
+api = settings.API_KEY
 
 # Fetch historical air pollution data
 response = requests.get(f"http://api.openweathermap.org/data/2.5/air_pollution/history?lat={lat}&lon={lon}&start={start}&end={end}&appid={api}")
