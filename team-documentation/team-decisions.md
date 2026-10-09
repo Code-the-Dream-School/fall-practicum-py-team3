@@ -9,7 +9,7 @@ Why: It is free to start, covers any coordinates, returns hourly readings, and h
 
 ## Product Question(s)
 
-How does air quality change over time and across locations, and when are pollution levels a potential concern? What health risks or recommendations apply at the current pollution level?
+How do air quality levels and dominant pollutants compare across 20 US cities, 2 per Census division plus Alaska and Hawaii, using hourly OpenWeather data from the last 30 days, and what health guidance applies to the AQI levels each city reached based on EPA guidelines?
 
 ## Data Needed
 
