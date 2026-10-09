@@ -23,29 +23,39 @@ city = City(LAT=38.9,LON=77.04,START=1606488670,END=1606747870)
 
 # Extract all the parameters and call the Historical Air Pollution API
 def mock_extract(city: City):
-    # Assign .env variable
-    api = settings.API_KEY
-    # Fetch historical air pollution data
-    response = requests.get(f"http://api.openweathermap.org/data/2.5/air_pollution/history",
-        params={
-        "lat": city.LAT,
-        "lon": city.LON,
-        "start": city.START,
-        "end": city.END,
-        "appid": api
-        }
-    )
-   
-    # If the connection's successful return the API's data
-    if response.status_code == 200: 
+    try:
+        # Assign .env variable
+        api = settings.API_KEY
+        # Fetch historical air pollution data
+        response = requests.get(f"http://api.openweathermap.org/data/2.5/air_pollution/history",
+            params={
+            "lat": city.LAT,
+            "lon": city.LON,
+            "start": city.START,
+            "end": city.END,
+            "appid": api
+            }
+        )
         data = response.json()    # parse the JSON body into Python objects
-        return data
-    
-    # If the connection isn't successful raise an error
-    if response.status_code == 400 or response.status_code == 401 or response.status_code == 500:
-        response.raise_for_status()
-    else:
-        response.raise_for_status()
+        
+        # If the connection's successful return the API's data
+        if response.status_code == 200:   
+            # Return False if the data['list'] is empty
+            if data['list'] == []:
+                return False
+            return data
+        
+        # If the connection isn't successful raise an error
+        if response.status_code == 400 or response.status_code == 401 or response.status_code == 500:
+            response.raise_for_status()
+            
+        else:
+            response.raise_for_status()
+            
+    # Except block for JSON errors
+    except requests.exceptions.JSONDecodeError as err:
+        print(f"Failed to decode JSON {err}")
+        raise err
 
 if __name__ == '__main__':
     print(mock_extract(city))
