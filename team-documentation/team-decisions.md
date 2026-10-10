@@ -9,17 +9,7 @@ Why: It is free to start, covers any coordinates, returns hourly readings, and h
 
 Known limitation: OpenWeather estimates air pollution with models and satellite data. It does not report readings from ground monitoring stations, so it can miss very local pollution. We will state this on the dashboard.
 
-### Alternatives considered
-
-Anton's alternatives document compared OpenWeather with OpenAQ, Open-Meteo, AirNow and EPA AQS. We tested OpenAQ for Oklahoma City, and it does offer real station readings, but it costs more effort for this project:
-
-- Stations differ by city, and each reports a different set of pollutants, so we would have to find and choose a good station for every city.
-- Station data has gaps: some sensors stop reporting and some hours are missing.
-- Readings come per sensor, so we would need a lookup from sensor ID to pollutant and units, and many more API calls.
-
-OpenWeather returns every pollutant, with the same structure, for any coordinates, so the whole team can build against one predictable response. We chose reliability and simplicity over station-level accuracy.
-
-Possible stretch goal: if time allows later, OpenAQ's public S3 archive could be added as a second source to compare station readings against OpenWeather's modeled values. It is not part of the current scope.
+Possible stretch goal: if time allows later, OpenWeather has a geocoding API that converts a city name into latitude and longitude coordinates. This would allow the dashboard to use a search-style build.
 
 ## Product Question
 
@@ -27,19 +17,22 @@ Possible stretch goal: if time allows later, OpenAQ's public S3 archive could be
 
 **Prioritized ideas** (we decide these now and do not add new ones in later weeks):
 
-1. Which cities and regions have the best and worst air right now, and what health tip applies at that level?
-2. How does air quality change over time within a city (hour of day, recent days, and further back)?
-3. Which pollutants most often push a city into Poor or Very Poor?
-4. When are pollution levels a potential concern, meaning how often does each city reach Poor or Very Poor?
+1. Which cities and regions have the best and worst air, and what health tip applies at that level according to EPA guidelines?
+2. How does air quality change over time within a city (day by day, over the full history)?
+
+## Product Question(s)
+
+How do air quality levels and dominant pollutants compare across 32 US cities, using daily OpenWeather readings from November 2020 to today, and what health guidance applies to the AQI levels each city reached based on EPA guidelines?
 
 ## Scope
 
 - **Geography:** United States only.
-- **Cities:** Spread across the U.S. Census divisions so every region is represented. Final city list: [TBD, decide in the weekly sync].
-- **Time range:** [TBD, decide after testing how far back the hourly data reaches. See Open Questions.]
+- **Cities:** 32 cities spread across the U.S. so every region is represented.
+- **Time range:** November 2020 (the start of OpenWeather's history) to today, about six years, with new data added daily after that.
+- **Granularity:** One reading per city per day. OpenWeather returns hourly data, so we take one reading for each day [TBD, time of day].
 - **Out of scope:** Other countries, forecasts, and station-based data sources.
 
-## Data Contract
+## Data Needed
 
 **Request:** latitude (lat), longitude (lon), start and end time (Unix timestamps).
 
@@ -51,7 +44,7 @@ Possible stretch goal: if time allows later, OpenAQ's public S3 archive could be
 | main.aqi   | Air quality index, 1 to 5              |
 | components | CO, NO, NO2, O3, SO2, PM2.5, PM10, NH3 |
 
-**AQI scale:** We use OpenWeather's 1 to 5 scale, not the U.S. EPA scale or other country-specific scales.
+**AQI scale:** We use OpenWeather's 1 to 5 scale for the AQI levels, not the U.S. EPA scale or other country-specific scales. The health tips use EPA guidelines for each pollutant, so the tips are based on EPA guidance even though the AQI levels follow OpenWeather's scale.
 
 | Value | Label     |
 | ----- | --------- |
@@ -68,7 +61,7 @@ The labels live in one lookup dictionary in code. The Transform step adds the la
 **Uniqueness:**
 
 - API request: a response is identified by (lat, lon, start, end).
-- Stored rows: one row per city per hour. Unique key is city plus timestamp.
+- Stored rows: one row per city per day. Unique key is city plus date.
 
 ## Database Decision
 
@@ -78,10 +71,12 @@ Choice: Supabase, because the whole team and our cloud deployment need to share 
 
 Extract: For each city, call the API with its coordinates and a time window. Save the raw response along with the request details and the time we retrieved it.
 
-Transform: Flatten the response into one row per city per hour. Convert Unix timestamps to readable dates, add the city name, add the AQI label from the lookup, attach units from the constants, and handle missing values (keep the row and store the missing pollutant as null). An LLM then adds a short health tip to each record.
+Transform: Flatten the response into one row per city per day. Convert Unix timestamps to readable dates, add the city name, add the AQI label from the lookup, attach units from the constants, and handle missing values (keep the row and store the missing pollutant as null). An LLM then adds a short health tip to each record.
 
-Load: Save the clean rows into Supabase. Use city plus timestamp as the unique key so rerunning the pipeline does not create duplicates.
+Load: Save the clean rows into Supabase. Use city plus date as the unique key so rerunning the pipeline does not create duplicates.
+
+The full history is loaded once. After that, a scheduled AWS Lambda function makes the same API call to add each new day's data.
 
 ## Dashboard
 
-A Streamlit dashboard reads from the Supabase table. It lets the user pick a city, shows the latest air quality label and health tip, and charts pollutant levels over time. A city comparison view shows how locations differ, grouped by region.
+A Streamlit dashboard reads from the Supabase table. It lets the user pick a city, shows the latest air quality label and health tip, and charts pollutant levels over time.
