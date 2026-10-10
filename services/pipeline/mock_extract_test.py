@@ -100,5 +100,23 @@ def test_mock_air(mock_requests): # parameter automatically supplied by @patch
     # assert the length of the result's "list" & compare it to a pollution records
     assert len(result["list"]) == 1
     
+@patch("mock_extract_test.requests.get")   
+def test_mock__empty_air(mock_requests): 
+    mock_test = Mock()
+    mock_test.status_code = 200
+    
+    # Empty list for the empty test
+    mock_test.json.return_value = {
+        "coord": {
+            "lon": 67.9,
+            "lat": -36.2
+        },
+        "list":[]
+    } 
+
+    mock_requests.return_value = mock_test
+    result = mock_extract(city)
+    assert result is False
+    
 if __name__ == '__main__':
     mock_extract(city)
