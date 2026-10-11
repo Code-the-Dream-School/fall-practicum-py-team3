@@ -1,4 +1,4 @@
-import requests, os, json
+import requests, pytest, os, json
 import pandas as pd
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -61,7 +61,7 @@ def mock_extract(city: City):
         print(f"Failed to decode JSON {err}")
         raise err
 
-# creates four mock test cases
+# Mock Test 1 -- Validation
   
 @patch("mock_extract_test.requests.get") # this temporarily replaces requests.get()
 def test_mock_air(mock_requests): # parameter automatically supplied by @patch
@@ -99,7 +99,9 @@ def test_mock_air(mock_requests): # parameter automatically supplied by @patch
     result = mock_extract(city)
     # assert the length of the result's "list" & compare it to a pollution records
     assert len(result["list"]) == 1
-    
+
+# Mock Test 2 -- Empty API Response
+
 @patch("mock_extract_test.requests.get")   
 def test_mock__empty_air(mock_requests): 
     mock_test = Mock()
@@ -117,6 +119,25 @@ def test_mock__empty_air(mock_requests):
     mock_requests.return_value = mock_test
     result = mock_extract(city)
     assert result is False
+
+# Mock Test 3 -- Unsuccessful HTTP Response
+
+@patch("mock_extract_test.requests.get")   
+def test_mock__http(mock_requests): 
+    mock_test = Mock()
+    mock_test.status_code = 500
+    
+    # raise status for the HTTPError
+    mock_test.raise_for_status.side_effect = (
+        requests.exceptions.HTTPError
+    )
+    
+    mock_requests.return_value = mock_test
+   
+    # wrap with pytest.raises(same error as above)
+    with pytest.raises(requests.exceptions.HTTPError):
+        mock_extract(city)
+    
     
 if __name__ == '__main__':
     mock_extract(city)
