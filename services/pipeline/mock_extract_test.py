@@ -138,6 +138,25 @@ def test_mock__http(mock_requests):
     with pytest.raises(requests.exceptions.HTTPError):
         mock_extract(city)
     
+# Mock Test 4 -- Invalid JSON
+@patch("mock_extract_test.requests.get")   
+def test_mock__json(mock_requests): 
+    mock_test = Mock()
+    mock_test.status_code = 200
     
+    # raise status for the JSONDecodeError
+    mock_test.json.side_effect = (
+        requests.exceptions.JSONDecodeError(
+            "Invalid JSON",
+            "not-json",
+            0
+        )
+    )
+    
+    mock_requests.return_value = mock_test
+   
+    with pytest.raises(requests.exceptions.JSONDecodeError):
+        mock_extract(city)
+        
 if __name__ == '__main__':
     mock_extract(city)
