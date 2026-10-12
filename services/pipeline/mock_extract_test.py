@@ -1,11 +1,10 @@
-import requests, pytest, os, json
-import pandas as pd
+import requests, pytest
+from datetime import datetime, timezone
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
-import unittest
 from unittest.mock import Mock, patch
 
-
+now = datetime.now(timezone.utc)
 
 # Pydantic for validating the API_KEY
 class Settings(BaseSettings):
@@ -46,7 +45,21 @@ def mock_extract(city: City):
             # Return False if the data['list'] is empty
             if data['list'] == []:
                 return False
-            return data
+            
+            metadata = {
+                "source": "http://api.openweathermap.org/data/2.5/air_pollution/history",
+                "request_params": {
+                    "lat": city.LAT,
+                    "lon": city.LON,
+                    "start": city.START,
+                    "end": city.END    
+                },
+                "retrieved_at": now.isoformat() # convert date object into a standardized string
+            }     
+            return {
+                 "raw_data": data,
+                 "metadata": metadata
+                }
         
         # If the connection isn't successful raise an error
         if response.status_code == 400 or response.status_code == 401 or response.status_code == 500:
@@ -55,7 +68,8 @@ def mock_extract(city: City):
         # Left this for status codes outside of the ones above    
         else:
             response.raise_for_status()
-            
+       
+       
     # Except block for JSON errors
     except requests.exceptions.JSONDecodeError as err:
         print(f"Failed to decode JSON {err}")
@@ -98,7 +112,7 @@ def test_mock_air(mock_requests): # parameter automatically supplied by @patch
     
     result = mock_extract(city)
     # assert the length of the result's "list" & compare it to a pollution records
-    assert len(result["list"]) == 1
+    assert len(result["raw_data"]["list"]) == 1
 
 # Mock Test 2 -- Empty API Response
 
@@ -159,4 +173,4 @@ def test_mock__json(mock_requests):
         mock_extract(city)
         
 if __name__ == '__main__':
-    mock_extract(city)
+    print(mock_extract(city))
