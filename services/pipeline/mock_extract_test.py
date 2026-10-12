@@ -4,8 +4,6 @@ from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from unittest.mock import Mock, patch
 
-now = datetime.now(timezone.utc)
-
 # Pydantic for validating the API_KEY
 class Settings(BaseSettings):
     API_KEY: str
@@ -38,13 +36,15 @@ def mock_extract(city: City):
             "appid": api
             }
         )
+        
+        response.raise_for_status()
         data = response.json()    # parse the JSON body into Python objects
         
         # If the connection's successful return the API's data
         if response.status_code == 200:   
             # Return False if the data['list'] is empty
             if data['list'] == []:
-                return False
+                print("No air pollution records found.")
             
             metadata = {
                 "source": "http://api.openweathermap.org/data/2.5/air_pollution/history",
@@ -54,21 +54,13 @@ def mock_extract(city: City):
                     "start": city.START,
                     "end": city.END    
                 },
-                "retrieved_at": now.isoformat() # convert date object into a standardized string
+                "retrieved_at": datetime.now(timezone.utc).isoformat() # convert date object into a standardized string
             }     
             return {
                  "raw_data": data,
                  "metadata": metadata
                 }
-        
-        # If the connection isn't successful raise an error
-        if response.status_code == 400 or response.status_code == 401 or response.status_code == 500:
-            response.raise_for_status()
-        
-        # Left this for status codes outside of the ones above    
-        else:
-            response.raise_for_status()
-       
+ 
        
     # Except block for JSON errors
     except requests.exceptions.JSONDecodeError as err:
@@ -132,7 +124,9 @@ def test_mock__empty_air(mock_requests):
 
     mock_requests.return_value = mock_test
     result = mock_extract(city)
-    assert result is False
+    
+    assert result["raw_data"]["list"] == []
+    assert "metadata" in result
 
 # Mock Test 3 -- Unsuccessful HTTP Response
 
