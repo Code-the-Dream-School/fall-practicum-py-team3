@@ -31,6 +31,7 @@ def run(*args):
 def create_venv():
     if VENV_PYTHON.exists():
         print(f"Virtual environment exists at {VENV_DIR.name}/")
+        return
 
     print(f"Creating virtual environment in {VENV_DIR.name}/")
     venv.EnvBuilder(with_pip=True).create(VENV_DIR)
@@ -64,7 +65,7 @@ def main():
     create_venv()
     install_dependencies()
     ensure_env_file()
-    print("\nSetup complete. Activate the virtual environment and start coding...\n")
+    print(f"\nSetup complete. Activate the virtual environment at {VENV_DIR}\n")
 
 
 if __name__ == "__main__":
