@@ -17,7 +17,8 @@ git remote add upstream git@github.com:Code-the-Dream-School/city-air-tracker-st
 git remote -v
 ```
 
-`origin` should point to the team's repository. `upstream` should point to the Code the Dream starter repository.
+`origin` should point to the team's repository.
+`upstream` should point to the Code the Dream starter repository.
 
 ```shell
 origin  git@github.com:Code-the-Dream-School/fall-practicum-py-team3.git (fetch)
@@ -29,3 +30,15 @@ upstream    git@github.com:Code-the-Dream-School/city-air-tracker-student.git (p
 4. Glance through the [docs here](./docs/docs_toc.md). Make sure to read these two specifically:
    - [Project Overview](./docs/project_overview.md)
    - [Recommended Tools](./docs/tools_and_prior_coverage.md)
+
+5. Run the following command to set up your local virtual environment to start coding.
+This will set up your virtual environment, and install all necessary libraries into it.
+
+```shell
+python3 setup_env.py
+```
+
+Some Linux users may have to run an additional install before running the command above. Please run this first:
+```shell
+sudo apt install python3-venv
+```
