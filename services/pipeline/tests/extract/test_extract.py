@@ -4,7 +4,7 @@ from dotenv import dotenv_values
 from pydantic import BaseModel
 from unittest.mock import Mock, patch
 
-API_KEY: str = dotenv_values(".env").get(OPENWEATHER_API_KEY)
+API_KEY: str = dotenv_values(".env").get("OPENWEATHER_API_KEY")
 
 # Pydantic for validating the latititude, longitude, start, and end
 class City(BaseModel):
