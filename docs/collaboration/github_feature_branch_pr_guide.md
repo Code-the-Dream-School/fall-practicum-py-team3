@@ -22,22 +22,22 @@ Create a separate branch for each task. Do not commit new work directly to `main
 Based on the branches already in this repo, the current naming pattern is:
 
 ```text
-feature/AIR-###-short-description
+feature/DREAM-###-short-description
 ```
 
 Examples from this project:
 
-- `feature/AIR-006-llm-7day-air-quality-forecasting`
-- `feature/AIR-009-store-gold-parquet-dataset-in-azure-cloud-storage`
-- `feature/AIR-009.4-docker-compose-azure`
-- `feature/AIR-002.2-pr-review-and-data-pipeline-docs`
+- `feature/DREAM-006-llm-7day-air-quality-forecasting`
+- `feature/DREAM-009-store-gold-parquet-dataset-in-azure-cloud-storage`
+- `feature/DREAM-009.4-docker-compose-azure`
+- `feature/DREAM-002.2-pr-review-and-data-pipeline-docs`
 
 ## Branch Naming Rules
 
 Follow these rules when creating a branch:
 
 1. Start with `feature/` for feature work.
-2. Include the ticket or issue id, such as `AIR-010`.
+2. Include the ticket or issue id, such as `DREAM-010`.
 3. Add a short lowercase description separated by hyphens.
 4. Do not use spaces.
 5. Keep the name specific enough that reviewers can understand the goal.
@@ -45,7 +45,7 @@ Follow these rules when creating a branch:
 Recommended format:
 
 ```text
-feature/AIR-010-add-dashboard-filter
+feature/DREAM-010-add-dashboard-filter
 ```
 
 ## Create a New Development Branch
@@ -55,7 +55,7 @@ From the project root, run:
 ```bash
 git switch main
 git pull origin main
-git switch -c feature/AIR-010-add-dashboard-filter
+git switch -c feature/DREAM-010-add-dashboard-filter
 ```
 
 This does three things:
@@ -79,7 +79,7 @@ A typical workflow looks like this:
 ```bash
 git status
 git add path/to/file1 path/to/file2
-git commit -m "AIR-010 Add dashboard filter for city comparison"
+git commit -m "DREAM-010 Add dashboard filter for city comparison"
 ```
 
 Tips:
@@ -94,7 +94,7 @@ Tips:
 The first time you push a new branch, use:
 
 ```bash
-git push -u origin feature/AIR-010-add-dashboard-filter
+git push -u origin feature/DREAM-010-add-dashboard-filter
 ```
 
 After that, you can usually push with:
@@ -132,7 +132,7 @@ Include:
 Example PR title:
 
 ```text
-AIR-010 Add dashboard filter for city comparison
+DREAM-010 Add dashboard filter for city comparison
 ```
 
 Example PR description:
@@ -183,7 +183,7 @@ One simple approach is:
 ```bash
 git switch main
 git pull origin main
-git switch feature/AIR-010-add-dashboard-filter
+git switch feature/DREAM-010-add-dashboard-filter
 git merge main
 ```
 
@@ -214,7 +214,7 @@ Local cleanup:
 ```bash
 git switch main
 git pull origin main
-git branch -d feature/AIR-010-add-dashboard-filter
+git branch -d feature/DREAM-010-add-dashboard-filter
 ```
 
 ## Common Mistakes to Avoid
@@ -233,7 +233,7 @@ Create a branch:
 ```bash
 git switch main
 git pull origin main
-git switch -c feature/AIR-010-add-dashboard-filter
+git switch -c feature/DREAM-010-add-dashboard-filter
 ```
 
 Commit work:
@@ -246,7 +246,7 @@ git commit -m "Add dashboard filter for city comparison"
 Push to GitHub:
 
 ```bash
-git push -u origin feature/AIR-010-add-dashboard-filter
+git push -u origin feature/DREAM-010-add-dashboard-filter
 ```
 
 Update branch with latest `main`:
@@ -254,7 +254,7 @@ Update branch with latest `main`:
 ```bash
 git switch main
 git pull origin main
-git switch feature/AIR-010-add-dashboard-filter
+git switch feature/DREAM-010-add-dashboard-filter
 git merge main
 ```
 
@@ -264,7 +264,7 @@ The safest team workflow for this repository is:
 
 1. start from `main`
 2. create one feature branch per task
-3. use the `feature/AIR-###-short-description` pattern
+3. use the `feature/DREAM-###-short-description` pattern
 4. push your branch to GitHub
 5. open a PR into `main`
 6. respond to review feedback in the same branch
