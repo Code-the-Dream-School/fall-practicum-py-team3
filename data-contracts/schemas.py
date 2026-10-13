@@ -14,17 +14,17 @@ The data will later be transformed into the Gold schema.
 """
     
 class Main(BaseModel):
-    aqi: int
+    aqi: int | None = None
     
 class Components(BaseModel):
-    co: float
-    no: float
-    no2: float
-    o3: float
-    so2: float
-    pm2_5: float
-    pm10: float
-    nh3: float
+    co: float | None = None
+    no: float | None = None
+    no2: float | None = None
+    o3: float | None = None
+    so2: float | None = None
+    pm2_5: float | None = None
+    pm10: float | None = None
+    nh3: float | None = None
     
 class AirQualityRecord(BaseModel):
     dt: int

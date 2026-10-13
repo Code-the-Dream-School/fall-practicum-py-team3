@@ -22,6 +22,7 @@ Possible stretch goal: if time allows later, OpenWeather has a geocoding API tha
 
 ## Product Question(s)
 
+
 How do air quality levels and dominant pollutants compare across 32 US cities, using daily OpenWeather readings from November 2020 to today, and what health guidance applies to the AQI levels each city reached based on EPA guidelines?
 
 ## Scope
@@ -46,7 +47,7 @@ How do air quality levels and dominant pollutants compare across 32 US cities, u
 
 **AQI scale:** We use OpenWeather's 1 to 5 scale for the AQI levels, not the U.S. EPA scale or other country-specific scales. The health tips use EPA guidelines for each pollutant, so the tips are based on EPA guidance even though the AQI levels follow OpenWeather's scale.
 
-| Value | Label     |
+| Value | Label     | 
 | ----- | --------- |
 | 1     | Good      |
 | 2     | Fair      |
