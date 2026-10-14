@@ -52,8 +52,8 @@ def mock_extract(city: City):
                 "retrieved_at": datetime.now(timezone.utc).isoformat() # convert date object into a standardized string
             }
             return {
-                 "raw_data": data,
-                 "metadata": metadata
+                "raw_data": data,
+                "metadata": metadata
                 }
 
 
@@ -63,8 +63,7 @@ def mock_extract(city: City):
         raise err
 
 # Mock Test 1 -- Validation
-
-@patch("mock_extract_test.requests.get") # this temporarily replaces requests.get()
+@patch("test_extract.requests.get") # this temporarily replaces requests.get()
 def test_mock_air(mock_requests): # parameter automatically supplied by @patch
     mock_test = Mock()
     mock_test.status_code = 200
@@ -102,8 +101,7 @@ def test_mock_air(mock_requests): # parameter automatically supplied by @patch
     assert len(result["raw_data"]["list"]) == 1
 
 # Mock Test 2 -- Empty API Response
-
-@patch("mock_extract_test.requests.get")
+@patch("test_extract.requests.get")
 def test_mock__empty_air(mock_requests):
     mock_test = Mock()
     mock_test.status_code = 200
@@ -124,8 +122,7 @@ def test_mock__empty_air(mock_requests):
     assert "metadata" in result
 
 # Mock Test 3 -- Unsuccessful HTTP Response
-
-@patch("mock_extract_test.requests.get")
+@patch("test_extract.requests.get")
 def test_mock__http(mock_requests):
     mock_test = Mock()
     mock_test.status_code = 500
@@ -142,7 +139,7 @@ def test_mock__http(mock_requests):
         mock_extract(city)
 
 # Mock Test 4 -- Invalid JSON
-@patch("mock_extract_test.requests.get")
+@patch("test_extract.requests.get")
 def test_mock__json(mock_requests):
     mock_test = Mock()
     mock_test.status_code = 200
