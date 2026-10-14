@@ -112,6 +112,7 @@ gold_example = GoldAirQuality(
     aqi=2,
     co=270.367,
     no=5.867,
+    no2=0.5,
     o3=4.783,
     so2=14.544, 
     pm2_5=13.448,
