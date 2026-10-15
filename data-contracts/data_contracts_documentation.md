@@ -29,13 +29,13 @@ A stored raw record should include:
 - The API payload
 - The request parameters used to retrieve the data
 
-The raw API response is validated using Pydantic.  The raw schema can be accessed via schemas.py in folder.
+The raw API response is validated using Pydantic.  The raw schema and example can be accessed via schemas.py in folder.
 
 ## 2.)  Gold Schema
 The Gold schema defines the cleaned, analysis-ready data.
 Each Gold record represents one air quality observation for a city at a specific timestamp.  The nested API response is flattened into a single record containing the AQI and pollutant measurements.
 
-The Gold schema can be viewed in the schemas.py file.  This is a first draft for the Gold schema and may be adjusted in future.
+The Gold schema and example can be viewed in the schemas.py file.  This is a first draft for the Gold schema and may be adjusted in future.
 
 ## 3.) Function Signatures
 The pipeline will use the following stages:

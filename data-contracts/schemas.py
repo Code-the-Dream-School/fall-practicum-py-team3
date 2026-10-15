@@ -16,6 +16,10 @@ The data will later be transformed into the Gold schema.
 class Main(BaseModel):
     aqi: int | None = None
     
+class Coordinates(BaseModel):
+    lat: float
+    lon: float
+    
 class Components(BaseModel):
     co: float | None = None
     no: float | None = None
@@ -32,7 +36,7 @@ class AirQualityRecord(BaseModel):
     components: Components
 
 class AirQualityResponse(BaseModel):
-    coord: list[float]
+    coord: Coordinates
     list: list[AirQualityRecord]
     
 class RequestParameters(BaseModel):
@@ -59,7 +63,7 @@ raw_example = RawAirQuality(
         end=1606747870
     ),
     payload=AirQualityResponse(
-        coord=[38.90, 77.04],
+        coord=Coordinates(lat=38.90, lon=-77.04),
         list=[
             AirQualityRecord(
                 dt=1606482000,
@@ -67,6 +71,7 @@ raw_example = RawAirQuality(
                 components=Components(
                     co=270.367,
                     no=5.867,
+                    no2=43.184,
                     o3=4.783,
                     so2=14.544, 
                     pm2_5=13.448,

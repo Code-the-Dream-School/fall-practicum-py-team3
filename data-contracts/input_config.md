@@ -59,3 +59,5 @@ Our team will be extracting nearly 6 years worth of historical data from each of
 |START | Nov 27, 2020, 00:00 UTC | 1606435200 |
 | END | TBD | TBD |
 
+Format: Unix timestamps in seconds, using UTC.
+
