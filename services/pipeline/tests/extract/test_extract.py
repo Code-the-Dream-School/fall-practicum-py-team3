@@ -14,7 +14,7 @@ class City(BaseModel):
     END: int
 
 # instantiate the City class
-city = City(LAT=38.9,LON=77.04,START=1606488670,END=1606747870)
+city = City(LAT=38.9,LON=-77.04,START=1606488670,END=1606747870)
 
 # Extract all the parameters and call the Historical Air Pollution API
 def mock_extract(city: City):
@@ -64,7 +64,7 @@ def mock_extract(city: City):
 
 # Mock Test 1 -- Validation
 
-@patch("mock_extract_test.requests.get") # this temporarily replaces requests.get()
+@patch("requests.get") # this temporarily replaces requests.get()
 def test_mock_air(mock_requests): # parameter automatically supplied by @patch
     mock_test = Mock()
     mock_test.status_code = 200
@@ -103,7 +103,7 @@ def test_mock_air(mock_requests): # parameter automatically supplied by @patch
 
 # Mock Test 2 -- Empty API Response
 
-@patch("mock_extract_test.requests.get")
+@patch("requests.get")
 def test_mock__empty_air(mock_requests):
     mock_test = Mock()
     mock_test.status_code = 200
@@ -125,7 +125,7 @@ def test_mock__empty_air(mock_requests):
 
 # Mock Test 3 -- Unsuccessful HTTP Response
 
-@patch("mock_extract_test.requests.get")
+@patch("requests.get")
 def test_mock__http(mock_requests):
     mock_test = Mock()
     mock_test.status_code = 500
@@ -142,7 +142,7 @@ def test_mock__http(mock_requests):
         mock_extract(city)
 
 # Mock Test 4 -- Invalid JSON
-@patch("mock_extract_test.requests.get")
+@patch("requests.get")
 def test_mock__json(mock_requests):
     mock_test = Mock()
     mock_test.status_code = 200
