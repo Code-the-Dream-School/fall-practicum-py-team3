@@ -14,10 +14,37 @@ class City(BaseModel):
     END: int
 
 # instantiate the City class
-city = City(LAT=38.9,LON=77.04,START=1606488670,END=1606747870)
+city = City(LAT=38.9,LON=-77.04,START=1606488670,END=1606747870)
+
+# cache > prevent redundant requests for identical historical windows
+_POLLUTION_CACHE = {} # in-memory dict > stores data['list'] for {lat, lon, start, end}
+CACHE_TTL_SECONDS = 300 # 5 minutes before becoming stale
+
+def clear_cache():
+    _POLLUTION_CACHE.clear() # reset cache between tests
 
 # Extract all the parameters and call the Historical Air Pollution API
 def mock_extract(city: City):
+    # create cache key > check for valid cached data
+    cache_key = f"{city.LAT},{city.LON},{city.START},{city.END}"
+    now_ts = datetime.now(timezone.utc).timestamp()
+    if cache_key in _POLLUTION_CACHE:
+        cached_data, cached_time = _POLLUTION_CACHE[cache_key]
+        if now_ts - cached_time < CACHE_TTL_SECONDS:
+            metadata = {
+                "source": "http://api.openweathermap.org/data/2.5/air_pollution/history",
+                "request_params": {
+                    "lat": city.LAT,
+                    "lon": city.LON,
+                    "start": city.START,
+                    "end": city.END,
+                },
+                "retrieved_at": datetime.now(timezone.utc).isoformat(),
+            }
+            return {"raw_data": cached_data, "metadata": metadata}
+        else:
+            del _POLLUTION_CACHE[cache_key]  # invalidate stale entry
+    
     try:
         # Assign .env variable
         api = API_KEY
@@ -51,11 +78,14 @@ def mock_extract(city: City):
                 },
                 "retrieved_at": datetime.now(timezone.utc).isoformat() # convert date object into a standardized string
             }
+            
+            # store result in cache
+            _POLLUTION_CACHE[cache_key] = (data, now_ts)
+            
             return {
-                 "raw_data": data,
-                 "metadata": metadata
+                "raw_data": data,
+                "metadata": metadata
                 }
-
 
     # Except block for JSON errors
     except requests.exceptions.JSONDecodeError as err:
@@ -63,9 +93,10 @@ def mock_extract(city: City):
         raise err
 
 # Mock Test 1 -- Validation
-
-@patch("mock_extract_test.requests.get") # this temporarily replaces requests.get()
+@patch(f"{__name__}.requests.get") # this temporarily replaces requests.get()
 def test_mock_air(mock_requests): # parameter automatically supplied by @patch
+    clear_cache()
+    
     mock_test = Mock()
     mock_test.status_code = 200
 
@@ -102,9 +133,10 @@ def test_mock_air(mock_requests): # parameter automatically supplied by @patch
     assert len(result["raw_data"]["list"]) == 1
 
 # Mock Test 2 -- Empty API Response
-
-@patch("mock_extract_test.requests.get")
+@patch(f"{__name__}.requests.get")
 def test_mock__empty_air(mock_requests):
+    clear_cache()
+    
     mock_test = Mock()
     mock_test.status_code = 200
 
@@ -124,9 +156,10 @@ def test_mock__empty_air(mock_requests):
     assert "metadata" in result
 
 # Mock Test 3 -- Unsuccessful HTTP Response
-
-@patch("mock_extract_test.requests.get")
+@patch(f"{__name__}.requests.get")
 def test_mock__http(mock_requests):
+    clear_cache()
+    
     mock_test = Mock()
     mock_test.status_code = 500
 
@@ -142,8 +175,10 @@ def test_mock__http(mock_requests):
         mock_extract(city)
 
 # Mock Test 4 -- Invalid JSON
-@patch("mock_extract_test.requests.get")
+@patch(f"{__name__}.requests.get")
 def test_mock__json(mock_requests):
+    clear_cache()
+    
     mock_test = Mock()
     mock_test.status_code = 200
 
@@ -160,6 +195,27 @@ def test_mock__json(mock_requests):
 
     with pytest.raises(requests.exceptions.JSONDecodeError):
         mock_extract(city)
+
+# Mock Test 5 -- Cache Hit Verification
+@patch(f"{__name__}.requests.get")
+def test_mock__cache_hit(mock_requests):
+    clear_cache()
+    mock_test = Mock()
+    mock_test.status_code = 200
+    mock_test.json.return_value = {
+        "coord": {"lon": 67.9, "lat": -36.2},
+        "list": [{"dt": 16526135192, "main": {"aqi": 3}, "components": {}}],
+    }
+    mock_requests.return_value = mock_test
+
+    # first call > uses API
+    result1 = mock_extract(city)
+    assert mock_requests.call_count == 1
+
+    # second call, identical params > should use cache (not API again)
+    result2 = mock_extract(city)
+    assert mock_requests.call_count == 1  # still 1 > proves cache was used
+    assert result1["raw_data"] == result2["raw_data"]
 
 if __name__ == '__main__':
     print(mock_extract(city))
