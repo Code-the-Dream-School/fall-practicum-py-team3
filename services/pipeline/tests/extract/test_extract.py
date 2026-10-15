@@ -14,7 +14,7 @@ class City(BaseModel):
     END: int
 
 # instantiate the City class
-city = City(LAT=38.9,LON=77.04,START=1606488670,END=1606747870)
+city = City(LAT=38.9,LON=-77.04,START=1606488670,END=1606747870)
 
 # cache > prevent redundant requests for identical historical windows
 _POLLUTION_CACHE = {} # in-memory dict > stores data['list'] for {lat, lon, start, end}
