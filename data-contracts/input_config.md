@@ -22,7 +22,7 @@ Each city in the configuration will include a city name, latitude, and longitude
 | | Philadelphia, PA | 39.95 | -75.17 |
 | | Pittsburgh, PA | 40.44 | -80.00 |
 | | Buffalo, NY | 42.89 | -78.88 |
-| East North Central | Chicago, IL | 41.888 | -87.62 |
+| East North Central | Chicago, IL | 41.88 | -87.62 |
 | | Detroit, MI | 42.33 | -83.05 |
 | | Columbus, OH | 39.96 | -83.00 |
 | | Milwaukee, WI | 43.04 | -87.91 |
@@ -56,8 +56,8 @@ Our team will be extracting nearly 6 years worth of historical data from each of
 
 | Setting | Date | Unix Timestamp |
 | --- | --- | --- |
-|START | Nov 27, 2020, 00:00 UTC | 1606435200 |
-| END | TBD | TBD |
+|START | Oct 15, 2025, 00:00 UTC | 1760486400 |
+| END | Oct 15, 2026, 00:00 UTC| 1792022400 |
 
 Format: Unix timestamps in seconds, using UTC.
 
