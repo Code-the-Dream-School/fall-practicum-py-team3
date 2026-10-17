@@ -4,12 +4,15 @@ from dotenv import dotenv_values
 from pydantic import BaseModel
 from unittest.mock import Mock, patch
 import json
-
+import time 
 import sys
+from importlib import import_module
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[5] / "data-contracts"))
 
-from schemas import RawAirQuality, RequestParameters
+_schemas = import_module("schemas")
+RawAirQuality = _schemas.RawAirQuality
+RequestParameters = _schemas.RequestParameters
 
 
 
@@ -62,7 +65,7 @@ CITIES = {
             "Anchorage": {"LAT": 61.22, "LON": -149.90}
         }
 
-START = 1760486400
+START = 1606435200
 END = 1792022400
 
 # cache > prevent redundant requests for identical historical windows
@@ -162,35 +165,76 @@ def extract(city: City) -> RawAirQuality:
         raise err
     
     
-# save data to file
-def write_to_json(city_name, result):
-    filename = Path(
+##Chunking and caching logic for extracting all windows of data for a city
+CHUNK_SECONDS = 365 * 24 * 60 * 60  # one year per API call, which is known to work
+RETRIES = 3
+
+
+def raw_path(city_name):
+    return Path(
         f"./services/pipeline/src/pipeline/extract/cities_raw/"
         f"{city_name.lower().replace(' ', '_')}.json"
     )
-    
-    if filename.exists():
-        return
-    
-    with open(filename, "w") as file:
+
+
+def chunk_windows(start, end, size=CHUNK_SECONDS):
+    windows = []
+    t = start
+    while t < end:
+        windows.append((t, min(t + size, end)))
+        t += size
+    return windows
+
+
+def extract_all_windows(name, coords):
+    """Pull START..END one year at a time, then merge into one result per city."""
+    records = {}  # keyed by timestamp, so overlapping chunk edges don't duplicate
+    base = None
+    for win_start, win_end in chunk_windows(START, END):
+        city = City(LAT=coords["LAT"], LON=coords["LON"], START=win_start, END=win_end)
+        for attempt in range(1, RETRIES + 1):
+            try:
+                result = extract(city)
+                break
+            except requests.exceptions.RequestException as err:
+                print(f"  {name} {win_start}-{win_end}: attempt {attempt} failed ({err})")
+                if attempt == RETRIES:
+                    raise
+                time.sleep(5 * attempt)
+        base = base or result
+        for record in result.payload.list:
+            records[record.dt] = record
+        time.sleep(1)  # short pause between calls
+    clear_cache()  # chunks are never reused, so don't let the cache grow
+    merged = base.payload.model_copy(update={"list": [records[t] for t in sorted(records)]})
+    return RawAirQuality(
+        retrieved_at=datetime.now(timezone.utc),
+        request_parameters=RequestParameters(lat=coords["LAT"], lon=coords["LON"], start=START, end=END),
+        payload=merged,
+    )
+
+
+def has_window(name):
+    """True if this city's file already covers START..END. A missing or unreadable file means fetch again."""
+    path = raw_path(name)
+    if not path.exists():
+        return False
+    try:
+        params = json.loads(path.read_text())["request_parameters"]
+    except (json.JSONDecodeError, KeyError):
+        return False
+    return params["start"] == START and params["end"] == END
+
+def write_to_json(city_name, result):
+    with open(raw_path(city_name), "w") as file:
         json.dump(result.model_dump(mode="json"), file)
-    
-    
-    
-    
+
+        
 if __name__ == "__main__":
-    
-    # loop for cities
     for name, coordinates in CITIES.items():
-        city = City(
-            LAT=coordinates["LAT"],
-            LON=coordinates["LON"],
-            START=START,
-            END=END,
-        )
-        
-        result = extract(city)
-        
+        if has_window(name):
+            print(f"{name}: already has the full window, skipping")
+            continue
+        result = extract_all_windows(name, coordinates)
         write_to_json(name, result)
-        
         print(f"{name}: {len(result.payload.list)} records saved")
