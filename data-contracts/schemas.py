@@ -14,7 +14,7 @@ The data will later be transformed into the Gold schema.
 """
     
 class Main(BaseModel):
-    aqi: int | None = None
+    aqi: float | None = None
     
 class Coordinates(BaseModel):
     lat: float
