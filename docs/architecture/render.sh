@@ -10,9 +10,9 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
 cp "$DIR/workspace.dsl" "$WORK/"
-chmod -R a+rwX "$WORK"
 
-docker run --rm -v "$WORK:/usr/local/structurizr" "$STRUCTURIZR_IMAGE" \
+# Host user, so the exported files can be cleaned up on Linux.
+docker run --rm --user "$(id -u):$(id -g)" -v "$WORK:/usr/local/structurizr" "$STRUCTURIZR_IMAGE" \
   export -workspace workspace.dsl -format plantuml/c4plantuml -output puml
 
 mkdir -p "$DIR/svg"
