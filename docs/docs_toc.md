@@ -23,7 +23,9 @@ Use these docs when onboarding to the repo, learning the workflow, reviewing pul
 
 Use these docs when you want to understand system structure, data flow, or dashboard design.
 
-...TODO...
+- [Architecture diagrams (C4)](./architecture/README.md)
+- [Architecture decision records](./adr/)
+- [Glossary (CONTEXT.md)](../CONTEXT.md)
 
 ## Reference
 
