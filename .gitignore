@@ -155,3 +155,7 @@ data/
 # Docker
 *.pid
 .tools/
+
+# Structurizr local preview output
+docs/architecture/workspace.json
+docs/architecture/.structurizr/
