@@ -112,7 +112,7 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
             servingGroup = deploymentGroup "Serving"
 
             deploymentNode "GitHub" "Repository and CI." "GitHub" {
-                repoMain = infrastructureNode "main branch" "Plan: protect it so merges need passing checks (not set up yet)." "Git"
+                repoMain = infrastructureNode "main branch" "Protected. Plan: require passing checks (not set up yet)." "Git"
                 actions = infrastructureNode "GitHub Actions" "Tests, Jira title check, diagram rendering; SAM deploy later (Could)." "GitHub Actions"
             }
 

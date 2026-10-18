@@ -109,7 +109,7 @@ The full history is loaded once (Backfill Run). After that, a scheduled AWS Lamb
 
 ## Dashboard
 
-A Streamlit dashboard, hosted on Streamlit Community Cloud, reads Supabase with a read-only user. It lets the user pick a city or Division, shows the latest air quality label and health tip, charts pollutant levels over time, and states that the data is modelled. It redeploys when `main` changes, so `main` should be protected with required checks (not set up yet).
+A Streamlit dashboard, hosted on Streamlit Community Cloud, reads Supabase with a read-only user. It lets the user pick a city or Division, shows the latest air quality label and health tip, charts pollutant levels over time, and states that the data is modelled. It redeploys when `main` changes, so `main` is protected and should also require passing checks (not set up yet).
 
 ## Template Code
 
