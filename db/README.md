@@ -34,30 +34,29 @@ One row per pipeline run, recording when the run started and ended, whether it
 succeeded, and how many rows moved through each stage. Timestamps are the
 processing time of the run itself, not the date range of the data it pulled.
 
-**Primary key:** `pipeline_run_id`. A generated identity — Postgres assigns
+**Primary key:** `run_id`. A BIGINT generated identity — Postgres assigns
 1, 2, 3… automatically. Never null, never duplicated.
 
 **Foreign keys:** none. This table does not reference any other table.
 
-**Uniqueness:** `run_id` is `UNIQUE`. One pipeline execution produces exactly
-one row, so a run can never be recorded twice.
+**Uniqueness:** `run_id`, enforced by the primary key. One pipeline execution
+produces exactly one row.
 
-**Required columns:** `pipeline_run_id`, `run_id`, `status`, `started_at`.
-The rest are nullable because their values are not known until the run
-finishes. A NULL count means that stage never completed, which is different
-from a count of zero.
+**Required columns:** `run_id`, `started_at`, `status`, `rows_extracted`,
+`rows_transformed`, `rows_loaded`. The three counts are `NOT NULL` and default
+to 0. `ended_at` and `error_message` are nullable — neither is known until the
+run finishes.
 
-| Column             | Type        | Required                    | Meaning                                      |
-| ------------------ | ----------- | --------------------------- | -------------------------------------------- |
-| `pipeline_run_id`  | BIGINT      | Yes (auto-generated)        | Primary key                                  |
-| `run_id`           | TEXT        | Yes                         | Identifier for the run, e.g. a UTC timestamp |
-| `status`           | TEXT        | Yes (defaults to `running`) | `running`, `succeeded`, or `failed`          |
-| `started_at`       | TIMESTAMPTZ | Yes (defaults to `now()`)   | When the run began                           |
-| `finished_at`      | TIMESTAMPTZ | No                          | When it ended; NULL while still running      |
-| `rows_extracted`   | INTEGER     | No                          | Rows pulled from the source                  |
-| `rows_loaded`      | INTEGER     | No                          | Rows written to raw                          |
-| `rows_transformed` | INTEGER     | No                          | Rows written to gold                         |
-| `error_message`    | TEXT        | No                          | Why the run failed                           |
+| Column             | Type        | Required                    | Meaning                                 |
+| ------------------ | ----------- | --------------------------- | --------------------------------------- |
+| `run_id`           | BIGINT      | Yes (auto-generated)        | Primary key                             |
+| `started_at`       | TIMESTAMPTZ | Yes (defaults to `now()`)   | When the run began                      |
+| `ended_at`         | TIMESTAMPTZ | No                          | When it ended; NULL while still running |
+| `status`           | TEXT        | Yes (defaults to `running`) | `running`, `success`, or `failed`       |
+| `rows_extracted`   | INTEGER     | Yes (defaults to 0)         | Rows pulled from the source             |
+| `rows_transformed` | INTEGER     | Yes (defaults to 0)         | Rows written to gold                    |
+| `rows_loaded`      | INTEGER     | Yes (defaults to 0)         | Rows written to raw                     |
+| `error_message`    | TEXT        | No                          | Why the run failed                      |
 
 `status` is constrained to those three values by
 `pipeline_runs_status_check`, so a typo cannot get into the table.
