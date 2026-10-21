@@ -97,7 +97,7 @@ The data is flattened from the nested API response and includes the AQI and all 
 class GoldAirQuality(BaseModel):
     city: str
     timestamp: datetime
-    aqi: float
+    aqi: int
     co: float
     no: float
     no2: float
@@ -126,5 +126,5 @@ gold_example = GoldAirQuality(
     pm10=15.524,
     nh3=0.289,
     category="Moderate",
-    score=__
+    score=2.0
 )
