@@ -15,3 +15,12 @@ env_path = project_root / ".env"
 
 # Read configuration
 config = dotenv_values(env_path)
+
+supabase_url = config.get("SUPABASE_URL")
+supabase_key = config.get("SUPABASE_KEY")
+
+if not supabase_url:
+    raise ValueError(f"{supabase_url} is not in {env_path}.")
+
+if not supabase_key:
+    raise ValueError(f"{supabase_key} is not in {env_path}.")
