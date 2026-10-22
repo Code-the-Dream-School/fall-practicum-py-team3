@@ -24,3 +24,14 @@ if not supabase_url:
 
 if not supabase_key:
     raise ValueError(f"{supabase_key} is not in {env_path}.")
+
+supabase = create_client(supabase_url, supabase_key)
+
+def load_raw(ext):
+    response = (
+        supabase.table("raw_air_quality")
+        .upsert(ext, on_confilct="city, timestamp")
+        .execute()
+    )
+
+    print(f"Upserted {len(response.data)} rows into raw_air_quality")
