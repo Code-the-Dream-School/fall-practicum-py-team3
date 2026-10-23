@@ -9,7 +9,7 @@ The pipeline requires configuration values that determine which air-quality data
 - API Credentials: The OpenWeather API key must be provided through an environment variable and should not be hardcoded or committed to GitHub.
 
 ## Cities Coordinates
-Team has decided to use a preselected list of cities.  The dashboard will allow users to compare the air-quality of the different cities across the different regions of the United States.
+Team has decided to use a preselected list of cities.  The dashboard will allow users to compare the air-quality of the different cities across the different divisions of the United States.
 
 Each city in the configuration will include a city name, latitude, and longitude, which the pipeline will use to retrieve air-quality data from the OpenWeather API.  Coordinates will be recorded to 2 decimal places for consistency.
 
@@ -56,7 +56,7 @@ Our team will be extracting nearly 6 years worth of historical data from each of
 
 | Setting | Date | Unix Timestamp |
 | --- | --- | --- |
-|START | Oct 15, 2025, 00:00 UTC | 1760486400 |
+|START | Nov 27, 2020, 00:00 UTC | 1606435200|
 | END | Oct 15, 2026, 00:00 UTC| 1792022400 |
 
 Format: Unix timestamps in seconds, using UTC.
