@@ -50,6 +50,26 @@ class RawAirQuality(BaseModel):
     request_parameters: RequestParameters
     payload: AirQualityResponse
 
+def to_raw_schema(self):
+        city = city[str(self.payload.coord)]
+        retrieved_at = str(self.retrieved_at.timestamp())
+        return [
+            {
+                "city": city,
+                "timestamp": datetime(record.dt),
+                "aqi": float(record.main.aqi),
+                "co": float(record.components.co),
+                "no": float(record.components.no),
+                "no2": float(record.components.no2),
+                "o3": float(record.components.o3),
+                "so2": float(record.components.so2),
+                "pm2_5": float(record.components.pm2_5),
+                "pm10": float(record.components.pm10),
+                "nh3": float(record.components.nh3),
+                "retrieved_at": retrieved_at,
+            } for record in self.payload.list
+        ]
+
 # =======================
 # RAW SCHEMA EXAMPLE
 # =======================
