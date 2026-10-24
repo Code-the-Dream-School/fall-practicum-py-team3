@@ -1,0 +1,40 @@
+name: Architecture diagrams
+
+on:
+  push:
+    branches-ignore:
+      - main
+    paths:
+      - "docs/architecture/workspace.dsl"
+      - "docs/architecture/render.sh"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: architecture-diagrams-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    name: Render and commit SVGs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+
+      - name: Render diagrams
+        run: bash docs/architecture/render.sh
+
+      - name: Commit changed SVGs
+        run: |
+          git add docs/architecture/svg
+          if git diff --cached --quiet; then
+            echo "Diagrams already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Re-render architecture diagrams"
+          git push
