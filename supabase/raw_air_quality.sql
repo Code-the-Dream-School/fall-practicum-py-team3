@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS raw_air_quality (
   city         TEXT             NOT NULL,
   timestamp    TIMESTAMPTZ      NOT NULL,  
-  aqi          SMALLINT,                   
+  aqi          DOUBLE PRECISION,                   
   co           DOUBLE PRECISION,
   no           DOUBLE PRECISION,
   no2          DOUBLE PRECISION,
