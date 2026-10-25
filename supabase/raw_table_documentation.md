@@ -27,7 +27,7 @@ script to create the table in their own Supabase testing projects.
 |---|---|---|
 | (city from the city list) | city | TEXT |
 | list[].dt | timestamp | TIMESTAMPTZ (UTC) |
-| list[].main.aqi | aqi | SMALLINT |
+| list[].main.aqi | aqi | DOUBLE PRECISION |
 | list[].components.co | co | DOUBLE PRECISION |
 | list[].components.no | no | DOUBLE PRECISION |
 | list[].components.no2 | no2 | DOUBLE PRECISION |
