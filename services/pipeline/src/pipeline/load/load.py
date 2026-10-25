@@ -1,8 +1,8 @@
 import os
-from datetime import datetime, timezone
 from pathlib import Path
 from dotenv import dotenv_values
 from supabase import create_client
+from data_contracts.schemas import to_raw_schema
 from pipeline.extract.extract import extract as ext, City
 
 # Find the directory containing setup_env.py
@@ -36,5 +36,13 @@ def load_raw(ext):
 
     print(f"Upserted {len(response.data)} rows into raw_air_quality")
  
-extraction = ext(City)
-load_raw(extraction)
+city = City(
+    LAT=0.85,
+    LON=-0.79,
+    START=1605182400,
+    END=1605268800
+)
+
+extraction = ext(city)
+records = extraction.to_raw_schema()
+load_raw(records)
