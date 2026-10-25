@@ -1,0 +1,290 @@
+# Tracked Cities (see CONTEXT.md and team-documentation/team-decisions.md#cities).
+# lat/lon: Census 2020 Gazetteer place internal point (INTPTLAT/INTPTLONG), 4 decimals.
+#   https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2020_Gazetteer/2020_Gaz_place_national.zip
+# metro_population_2020: Census Apr 1 2020 estimates base (ESTIMATESBASE2020), 2023 metro delineations.
+#   https://www2.census.gov/programs-surveys/popest/datasets/2020-2024/metro/totals/cbsa-est2024-alldata.csv
+# timezone: IANA name, used to compute each city's local date.
+# Changes go through a pull request.
+
+cities:
+  # New England
+  - name: Boston
+    state: MA
+    division: New England
+    lat: 42.3386
+    lon: -71.0183
+    timezone: America/New_York
+    metro: Boston-Cambridge-Newton, MA-NH
+    metro_population_2020: 4944732
+  - name: Providence
+    state: RI
+    division: New England
+    lat: 41.8231
+    lon: -71.4188
+    timezone: America/New_York
+    metro: Providence-Warwick, RI-MA
+    metro_population_2020: 1676652
+
+  # Middle Atlantic
+  - name: New York
+    state: NY
+    division: Middle Atlantic
+    lat: 40.6627
+    lon: -73.9387
+    timezone: America/New_York
+    metro: New York-Newark-Jersey City, NY-NJ
+    metro_population_2020: 20083412
+  - name: Philadelphia
+    state: PA
+    division: Middle Atlantic
+    lat: 40.0094
+    lon: -75.1333
+    timezone: America/New_York
+    metro: Philadelphia-Camden-Wilmington, PA-NJ-DE-MD
+    metro_population_2020: 6245017
+  - name: Pittsburgh
+    state: PA
+    division: Middle Atlantic
+    lat: 40.4398
+    lon: -79.9763
+    timezone: America/New_York
+    metro: Pittsburgh, PA
+    metro_population_2020: 2456998
+  - name: Buffalo
+    state: NY
+    division: Middle Atlantic
+    lat: 42.8925
+    lon: -78.8597
+    timezone: America/New_York
+    metro: Buffalo-Cheektowaga, NY
+    metro_population_2020: 1166870
+
+  # East North Central
+  - name: Chicago
+    state: IL
+    division: East North Central
+    lat: 41.8370
+    lon: -87.6849
+    timezone: America/Chicago
+    metro: Chicago-Naperville-Elgin, IL-IN
+    metro_population_2020: 9454363
+  - name: Detroit
+    state: MI
+    division: East North Central
+    lat: 42.3830
+    lon: -83.1022
+    timezone: America/Detroit
+    metro: Detroit-Warren-Dearborn, MI
+    metro_population_2020: 4392388
+  - name: Columbus
+    state: OH
+    division: East North Central
+    lat: 39.9855
+    lon: -82.9856
+    timezone: America/New_York
+    metro: Columbus, OH
+    metro_population_2020: 2138980
+  - name: Milwaukee
+    state: WI
+    division: East North Central
+    lat: 43.0633
+    lon: -87.9667
+    timezone: America/Chicago
+    metro: Milwaukee-Waukesha, WI
+    metro_population_2020: 1574735
+
+  # West North Central
+  - name: Minneapolis
+    state: MN
+    division: West North Central
+    lat: 44.9633
+    lon: -93.2683
+    timezone: America/Chicago
+    metro: Minneapolis-St. Paul-Bloomington, MN-WI
+    metro_population_2020: 3690231
+  - name: Kansas City
+    state: MO
+    division: West North Central
+    lat: 39.1224
+    lon: -94.5551
+    timezone: America/Chicago
+    metro: Kansas City, MO-KS
+    metro_population_2020: 2192018
+  - name: Omaha
+    state: NE
+    division: West North Central
+    lat: 41.2627
+    lon: -96.0535
+    timezone: America/Chicago
+    metro: Omaha, NE-IA
+    metro_population_2020: 967595
+
+  # South Atlantic
+  - name: Washington
+    state: DC
+    division: South Atlantic
+    lat: 38.9042
+    lon: -77.0165
+    timezone: America/New_York
+    metro: Washington-Arlington-Alexandria, DC-VA-MD-WV
+    metro_population_2020: 6278595
+  - name: Charlotte
+    state: NC
+    division: South Atlantic
+    lat: 35.2090
+    lon: -80.8310
+    timezone: America/New_York
+    metro: Charlotte-Concord-Gastonia, NC-SC
+    metro_population_2020: 2660162
+  - name: Atlanta
+    state: GA
+    division: South Atlantic
+    lat: 33.7629
+    lon: -84.4227
+    timezone: America/New_York
+    metro: Atlanta-Sandy Springs-Roswell, GA
+    metro_population_2020: 6106805
+  - name: Miami
+    state: FL
+    division: South Atlantic
+    lat: 25.7752
+    lon: -80.2086
+    timezone: America/New_York
+    metro: Miami-Fort Lauderdale-West Palm Beach, FL
+    metro_population_2020: 6138357
+  - name: Tampa
+    state: FL
+    division: South Atlantic
+    lat: 27.9679
+    lon: -82.4746
+    timezone: America/New_York
+    metro: Tampa-St. Petersburg-Clearwater, FL
+    metro_population_2020: 3175285
+
+  # East South Central
+  - name: Birmingham
+    state: AL
+    division: East South Central
+    lat: 33.5272
+    lon: -86.7970
+    timezone: America/Chicago
+    metro: Birmingham, AL
+    metro_population_2020: 1180600
+  - name: Memphis
+    state: TN
+    division: East South Central
+    lat: 35.1090
+    lon: -89.9666
+    timezone: America/Chicago
+    metro: Memphis, TN-MS-AR
+    metro_population_2020: 1345440
+  - name: Louisville
+    state: KY
+    division: East South Central
+    lat: 38.1654
+    lon: -85.6474
+    timezone: America/Kentucky/Louisville
+    metro: Louisville/Jefferson County, KY-IN
+    metro_population_2020: 1362150
+
+  # West South Central
+  - name: Houston
+    state: TX
+    division: West South Central
+    lat: 29.7857
+    lon: -95.3888
+    timezone: America/Chicago
+    metro: Houston-Pasadena-The Woodlands, TX
+    metro_population_2020: 7150233
+  - name: Dallas
+    state: TX
+    division: West South Central
+    lat: 32.7933
+    lon: -96.7665
+    timezone: America/Chicago
+    metro: Dallas-Fort Worth-Arlington, TX
+    metro_population_2020: 7638258
+  - name: Oklahoma City
+    state: OK
+    division: West South Central
+    lat: 35.4671
+    lon: -97.5137
+    timezone: America/Chicago
+    metro: Oklahoma City, OK
+    metro_population_2020: 1425732
+  - name: El Paso
+    state: TX
+    division: West South Central
+    lat: 31.8478
+    lon: -106.4311
+    timezone: America/Denver
+    metro: El Paso, TX
+    metro_population_2020: 868912
+
+  # Mountain
+  - name: Phoenix
+    state: AZ
+    division: Mountain
+    lat: 33.5722
+    lon: -112.0901
+    timezone: America/Phoenix
+    metro: Phoenix-Mesa-Chandler, AZ
+    metro_population_2020: 4851322
+  - name: Salt Lake City
+    state: UT
+    division: Mountain
+    lat: 40.7769
+    lon: -111.9310
+    timezone: America/Denver
+    metro: Salt Lake City-Murray, UT
+    metro_population_2020: 1257934
+  - name: Denver
+    state: CO
+    division: Mountain
+    lat: 39.7619
+    lon: -104.8811
+    timezone: America/Denver
+    metro: Denver-Aurora-Centennial, CO
+    metro_population_2020: 2963806
+  - name: Boise
+    state: ID
+    division: Mountain
+    lat: 43.6002
+    lon: -116.2298
+    timezone: America/Boise
+    metro: Boise City, ID
+    metro_population_2020: 764743
+
+  # Pacific
+  - name: Los Angeles
+    state: CA
+    division: Pacific
+    lat: 34.0194
+    lon: -118.4108
+    timezone: America/Los_Angeles
+    metro: Los Angeles-Long Beach-Anaheim, CA
+    metro_population_2020: 13204657
+  - name: Fresno
+    state: CA
+    division: Pacific
+    lat: 36.7827
+    lon: -119.7934
+    timezone: America/Los_Angeles
+    metro: Fresno, CA
+    metro_population_2020: 1164903
+  - name: Seattle
+    state: WA
+    division: Pacific
+    lat: 47.6193
+    lon: -122.3516
+    timezone: America/Los_Angeles
+    metro: Seattle-Tacoma-Bellevue, WA
+    metro_population_2020: 4018783
+  - name: Portland
+    state: OR
+    division: Pacific
+    lat: 45.5370
+    lon: -122.6500
+    timezone: America/Los_Angeles
+    metro: Portland-Vancouver-Hillsboro, OR-WA
+    metro_population_2020: 2512850
