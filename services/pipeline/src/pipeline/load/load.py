@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from dotenv import dotenv_values
 from supabase import create_client
-import data_contracts.schemas
+import data_contracts.schemas as schemas
 from pipeline.extract.extract import extract as ext, City
 
 # Find the directory containing setup_env.py
@@ -41,10 +41,10 @@ def load_raw(ext):
 city = City(
     LAT=35.2271,
     LON=-80.8431,
-    START=1605182400,
-    END=1605268800
+   START=1606435200, END=1637989200
 )
 
 extraction = ext(city)
 records = extraction.to_raw_schema("Charlotte")
+print("Records:", len(records))
 load_raw(records)

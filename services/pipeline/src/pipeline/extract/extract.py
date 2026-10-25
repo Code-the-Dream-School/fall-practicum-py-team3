@@ -8,7 +8,7 @@ import time
 import sys
 from importlib import import_module
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[5] / "data-contracts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[5] / "data_contracts"))
 
 _schemas = import_module("schemas")
 RawAirQuality = _schemas.RawAirQuality

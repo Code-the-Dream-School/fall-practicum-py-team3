@@ -55,7 +55,7 @@ class RawAirQuality(BaseModel):
             return [
                 {
                     "city": city_name,
-                    "timestamp": datetime.fromtimestamp(record.dt,tz=timezone.utc).isoformat,
+                    "timestamp": datetime.fromtimestamp(record.dt,tz=timezone.utc).isoformat(),
                     "aqi": float(record.main.aqi),
                     "co": float(record.components.co),
                     "no": float(record.components.no),
