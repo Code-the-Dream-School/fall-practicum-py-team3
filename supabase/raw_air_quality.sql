@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS raw_air_quality (
   city         TEXT             NOT NULL,
   timestamp    TIMESTAMPTZ      NOT NULL,  
-  aqi          SMALLINT,                   
+  aqi          DOUBLE PRECISION,                   
   co           DOUBLE PRECISION,
   no           DOUBLE PRECISION,
   no2          DOUBLE PRECISION,
@@ -17,3 +17,6 @@ CREATE TABLE IF NOT EXISTS raw_air_quality (
 
 -- Only the service/secret key (pipeline) can access this table.
 ALTER TABLE raw_air_quality ENABLE ROW LEVEL SECURITY;
+-- For databases created with the earlier version (aqi was SMALLINT).
+--Safe to run
+ALTER TABLE raw_air_quality ALTER COLUMN aqi TYPE DOUBLE PRECISION;
