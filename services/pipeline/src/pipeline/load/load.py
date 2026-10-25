@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from dotenv import dotenv_values
 from supabase import create_client
-from data_contracts.schemas import to_raw_schema
+import data_contracts.schemas
 from pipeline.extract.extract import extract as ext, City
 
 # Find the directory containing setup_env.py
@@ -14,6 +14,8 @@ env_path = project_root / ".env"
 
 # Read configuration
 config = dotenv_values(env_path)
+ext.__globals__["API_KEY"] = config.get("OPENWEATHER_API_KEY")
+print("API key loaded:", bool(ext.__globals__.get("API_KEY")))
 
 supabase_url = config.get("SUPABASE_URL")
 supabase_key = config.get("SUPABASE_KEY")
@@ -37,12 +39,12 @@ def load_raw(ext):
     print(f"Upserted {len(response.data)} rows into raw_air_quality")
  
 city = City(
-    LAT=0.85,
-    LON=-0.79,
+    LAT=35.2271,
+    LON=-80.8431,
     START=1605182400,
     END=1605268800
 )
 
 extraction = ext(city)
-records = extraction.to_raw_schema()
+records = extraction.to_raw_schema("Charlotte")
 load_raw(records)
