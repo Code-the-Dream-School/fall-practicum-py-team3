@@ -73,6 +73,5 @@ Each pipeline function should be independent and only require the information ne
 Configuration and secrets should be managed through environment variables.  This allows the same functions to be reused in different environments, such as AWS Lambda.
 
 ## 5.)  Input Configuration
-- TBD
-- Team has so far decided to use cities within the United States.
+- Refer to input_config.md
 

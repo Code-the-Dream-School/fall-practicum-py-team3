@@ -3,6 +3,7 @@ pyarrow>=16.0
 requests>=2.32
 pydantic>=2.7
 pydantic-settings>=2.3
+PyYAML>=6.0
 python-dotenv>=1.0
 prefect>=3.0
 azure-storage-blob>=12.26
