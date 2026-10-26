@@ -39,9 +39,10 @@ def load_raw(ext):
     print(f"Upserted {len(response.data)} rows into raw_air_quality")
  
 city = City(
-    LAT=35.2271,
-    LON=-80.8431,
-   START=1606435200, END=1637989200
+   LAT=35.2271,
+   LON=-80.8431,
+   START=1761350400, 
+   END=1792886400
 )
 
 extraction = ext(city)
