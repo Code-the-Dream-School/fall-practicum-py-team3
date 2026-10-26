@@ -15,7 +15,6 @@ env_path = project_root / ".env"
 # Read configuration
 config = dotenv_values(env_path)
 ext.__globals__["API_KEY"] = config.get("OPENWEATHER_API_KEY")
-print("API key loaded:", bool(ext.__globals__.get("API_KEY")))
 
 supabase_url = config.get("SUPABASE_URL")
 supabase_key = config.get("SUPABASE_KEY")
@@ -32,20 +31,21 @@ supabase = create_client(supabase_url, supabase_key)
 def load_raw(ext):
     response = (
         supabase.table("raw_air_quality")
-        .upsert(ext, on_conflict="city, timestamp")
+        .upsert(ext, on_conflict="city,timestamp")
         .execute()
     )
 
     print(f"Upserted {len(response.data)} rows into raw_air_quality")
  
-city = City(
-   LAT=35.2271,
-   LON=-80.8431,
-   START=1761350400, 
-   END=1792886400
-)
+if __name__ == "__main__":
+    city = City(
+    LAT=35.2271,
+    LON=-80.8431,
+    START=1761350400, 
+    END=1792886400
+    )
 
-extraction = ext(city)
-records = extraction.to_raw_schema("Charlotte")
-print("Records:", len(records))
-load_raw(records)
+    extraction = ext(city)
+    records = extraction.to_raw_schema("Charlotte")
+    print("Records:", len(records))
+    load_raw(records)
