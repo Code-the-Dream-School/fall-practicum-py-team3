@@ -143,9 +143,10 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-
+.idea
 .vscode/
 data/
+
 # Streamlit
 .streamlit/secrets.toml
 
@@ -156,3 +157,7 @@ data/
 # Docker
 *.pid
 .tools/
+
+# Structurizr local preview output
+docs/architecture/workspace.json
+docs/architecture/.structurizr/

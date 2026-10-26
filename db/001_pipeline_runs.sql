@@ -1,15 +1,14 @@
-
 CREATE TABLE IF NOT EXISTS pipeline_runs (
-    pipeline_run_id  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    run_id           TEXT        NOT NULL UNIQUE,
-    status           TEXT        NOT NULL DEFAULT 'running',
-    started_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-    finished_at      TIMESTAMPTZ,
-    rows_extracted   INTEGER,
-    rows_loaded      INTEGER,
-    rows_transformed INTEGER,
+    run_id           BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    created_at       TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    started_at       TIMESTAMPTZ, 
+    ended_at         TIMESTAMPTZ,
+    status           TEXT         NOT NULL DEFAULT 'pending',
+    rows_extracted   INTEGER,     
+    rows_transformed INTEGER,     
+    rows_loaded      INTEGER,     
     error_message    TEXT,
 
     CONSTRAINT pipeline_runs_status_check
-        CHECK (status IN ('running', 'succeeded', 'failed'))
+        CHECK (status IN ('pending','running', 'success', 'failed'))
 );

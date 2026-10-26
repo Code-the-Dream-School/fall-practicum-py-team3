@@ -14,7 +14,7 @@ The data will later be transformed into the Gold schema.
 """
     
 class Main(BaseModel):
-    aqi: int | None = None
+    aqi: float | None = None
     
 class Coordinates(BaseModel):
     lat: float
@@ -106,6 +106,8 @@ class GoldAirQuality(BaseModel):
     pm2_5: float
     pm10: float
     nh3: float
+    category: str
+    score: float
 
 # =======================  
 # GOLD SCHEMA EXAMPLE
@@ -122,5 +124,7 @@ gold_example = GoldAirQuality(
     so2=14.544, 
     pm2_5=13.448,
     pm10=15.524,
-    nh3=0.289
+    nh3=0.289,
+    category="Moderate",
+    score=2.0
 )
