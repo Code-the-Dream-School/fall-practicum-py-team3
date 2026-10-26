@@ -1,46 +1,64 @@
 import os
-import psycopg
-from dotenv import load_dotenv
+from datetime import datetime, timezone
 
-load_dotenv("dev.env")
+from dotenv import load_dotenv
+from supabase import create_client
+
+load_dotenv()
+
+_client = None
 
 
 def _connect():
-    dsn = os.environ.get("DATABASE_URL")
-    if not dsn:
-        raise RuntimeError("DATABASE_URL is not set. Check .env.")
-    return psycopg.connect(dsn)
+    global _client
+    if _client is None:
+        url = os.environ.get("SUPABASE_URL")
+        key = os.environ.get("SUPABASE_KEY")
+        if not url or not key:
+            raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set. Check .env.")
+        _client = create_client(url, key)
+    return _client
+
+
+def _now():
+    return datetime.now(timezone.utc).isoformat()
 
 
 def start_run():
     """Open a run record. Returns the run_id the database assigned."""
-    with _connect() as conn, conn.cursor() as cur:
-        cur.execute(
-            "INSERT INTO pipeline_runs (status, started_at) "
-            "VALUES ('running', now()) RETURNING run_id"
-        )
-        return cur.fetchone()[0]
+    response = (
+        _connect()
+        .table("pipeline_runs")
+        .insert({"status": "running", "started_at": _now()})
+        .execute()
+    )
+    return response.data[0]["run_id"]
+
 
 def finish_run(run_id, rows_extracted=None, rows_loaded=None, rows_transformed=None):
     _close(run_id, "success", rows_extracted, rows_loaded, rows_transformed, None)
-    
+
+
 def fail_run(run_id, error, rows_extracted=None, rows_loaded=None, rows_transformed=None):
     _close(run_id, "failed", rows_extracted, rows_loaded, rows_transformed, str(error))
 
+
 def _close(run_id, status, rows_extracted, rows_loaded, rows_transformed, error_message):
-    with _connect() as conn, conn.cursor() as cur:
-        cur.execute(
-            """
-            UPDATE pipeline_runs
-            SET status           = %s,
-                ended_at         = now(),
-                rows_extracted   = %s,
-                rows_loaded      = %s,
-                rows_transformed = %s,
-                error_message    = %s
-            WHERE run_id = %s
-            """,
-            (status, rows_extracted, rows_loaded, rows_transformed, error_message, run_id),
+    response = (
+        _connect()
+        .table("pipeline_runs")
+        .update(
+            {
+                "status": status,
+                "ended_at": _now(),
+                "rows_extracted": rows_extracted,
+                "rows_loaded": rows_loaded,
+                "rows_transformed": rows_transformed,
+                "error_message": error_message,
+            }
         )
-        if cur.rowcount == 0:
-            raise RuntimeError(f"No pipeline_runs row with run_id {run_id}")
+        .eq("run_id", run_id)
+        .execute()
+    )
+    if not response.data:
+        raise RuntimeError(f"No pipeline_runs row with run_id {run_id}")
