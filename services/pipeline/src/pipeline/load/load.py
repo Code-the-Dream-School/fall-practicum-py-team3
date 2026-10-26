@@ -29,13 +29,19 @@ supabase = create_client(supabase_url, supabase_key)
 
 # Load raw data to db
 def load_raw(ext):
-    response = (
-        supabase.table("raw_air_quality")
-        .upsert(ext, on_conflict="city,timestamp")
-        .execute()
-    )
+    try:
+        
+        response = (
+            supabase.table("raw_air_quality")
+            .upsert(ext, on_conflict="city,timestamp")
+            .execute()
+        )
 
-    print(f"Upserted {len(response.data)} rows into raw_air_quality")
+        print(f"Upserted {len(response.data)} rows into raw_air_quality")
+    
+    except Exception as error:
+        print(f"Failed to load raw air quality records: {error}.")
+        raise
  
 if __name__ == "__main__":
     city = City(
