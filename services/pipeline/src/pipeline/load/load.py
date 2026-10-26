@@ -30,7 +30,8 @@ supabase = create_client(supabase_url, supabase_key)
 # Load raw data to db
 def load_raw(ext):
     try:
-        
+        # Records are unique by city and timestamp.
+        # Upsert updates existing records instead of creating duplicates.
         response = (
             supabase.table("raw_air_quality")
             .upsert(ext, on_conflict="city,timestamp")
