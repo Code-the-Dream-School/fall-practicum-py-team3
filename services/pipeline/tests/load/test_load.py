@@ -8,7 +8,7 @@ from pydantic import ValidationError
 # setup / sample data
 
 ROOT = Path(__file__).resolve().parents[4]
-sys.path.insert(0, str(ROOT / "data-contracts"))
+sys.path.insert(0, str(ROOT / "data_contracts"))
 sys.path.insert(0, str(ROOT / "services" / "pipeline" / "src"))
 
 import pipeline
@@ -48,20 +48,22 @@ DT_2 = DT_1 + 3600  # one hour later
 POLLUTANTS = ["co", "no", "no2", "o3", "so2", "pm2_5", "pm10", "nh3"]
 
 
-def make_record(dt=DT_1, aqi=2) -> AirQualityRecord:
+def make_record(dt=DT_1, aqi=2, **overrides) -> AirQualityRecord:
+    components = {
+        "co": 270.367,
+        "no": 5.867,
+        "no2": 43.184,
+        "o3": 4.783,
+        "so2": 14.544,
+        "pm2_5": 13.448,
+        "pm10": 15.524,
+        "nh3": 0.289,
+    }
+    components.update(overrides)
     return AirQualityRecord(
         dt=dt,
         main=Main(aqi=aqi),
-        components=Components(
-            co=270.367,
-            no=5.867,
-            no2=43.184,
-            o3=4.783,
-            so2=14.544,
-            pm2_5=13.448,
-            pm10=15.524,
-            nh3=0.289,
-        ),
+        components=Components(**components),
     )
 
 

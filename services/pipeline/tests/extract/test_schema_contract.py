@@ -5,8 +5,7 @@ import pytest
 from pydantic import ValidationError
 
 ROOT = Path(__file__).resolve().parents[4]
-sys.path.insert(0, str(ROOT / "data-contracts"))
-
+sys.path.insert(0, str(ROOT / "data_contracts"))
 from schemas import AirQualityResponse
 
 REC = {
