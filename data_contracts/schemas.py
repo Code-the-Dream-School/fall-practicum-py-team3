@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, ValidationError
 
 # =======================
@@ -49,6 +49,25 @@ class RawAirQuality(BaseModel):
     retrieved_at: datetime
     request_parameters: RequestParameters
     payload: AirQualityResponse
+
+    def to_raw_schema(self, city_name: str):
+            retrieved_at = self.retrieved_at.isoformat()
+            return [
+                {
+                    "city": city_name,
+                    "timestamp": datetime.fromtimestamp(record.dt,tz=timezone.utc).isoformat(),
+                    "aqi": float(record.main.aqi),
+                    "co": float(record.components.co),
+                    "no": float(record.components.no),
+                    "no2": float(record.components.no2),
+                    "o3": float(record.components.o3),
+                    "so2": float(record.components.so2),
+                    "pm2_5": float(record.components.pm2_5),
+                    "pm10": float(record.components.pm10),
+                    "nh3": float(record.components.nh3),
+                    "retrieved_at": retrieved_at,
+                } for record in self.payload.list
+            ]
 
 # =======================
 # RAW SCHEMA EXAMPLE
