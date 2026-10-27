@@ -8,7 +8,7 @@ from pydantic import ValidationError
 # setup / sample data
 
 ROOT = Path(__file__).resolve().parents[4]
-sys.path.insert(0, str(ROOT / "data-contracts"))
+sys.path.insert(0, str(ROOT / "data_contracts"))
 sys.path.insert(0, str(ROOT / "services" / "pipeline" / "src"))
 
 import pipeline
