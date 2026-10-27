@@ -16,6 +16,27 @@ AQI_LABELS = {1: "Good", 2: "Fair", 3: "Moderate", 4: "Poor", 5: "Very Poor"}
 POLLUTANTS = ("co", "no", "no2", "o3", "so2", "pm2_5", "pm10", "nh3")
 REQUIRED = ("aqi",) + POLLUTANTS
 
+# OpenWeather's AQI bands, µg/m³: the lower edge of levels 1-5.
+# https://openweathermap.org/api/air-pollution
+# NO and NH3 are not part of OpenWeather's AQI, so they are left out here too.
+BANDS = {
+    "so2": [0, 20, 80, 250, 350],
+    "no2": [0, 40, 70, 150, 200],
+    "pm10": [0, 20, 50, 100, 200],
+    "pm2_5": [0, 10, 25, 50, 75],
+    "o3": [0, 60, 100, 140, 180],
+    "co": [0, 4400, 9400, 12400, 15400],
+}
+def _sub_index(value, edges):
+    """Level plus progress through it, e.g. 2.25 = a quarter of the way through Fair."""
+    level = sum(value >= edge for edge in edges)
+    lower = edges[level - 1]
+    if level < len(edges):
+        upper = edges[level]
+    else:
+        # Very Poor has no upper edge; reuse the width of the Poor band.
+        upper = lower + (lower - edges[level - 2])
+    return min(level + (value - lower) / (upper - lower), 5.99)
 
 
 def aqi_category(aqi):
@@ -75,7 +96,12 @@ def _derive(frame):
         raise ValueError(f"aqi must be 1 through 5, got {bad}")
 
     frame["category"] = frame["aqi"].map(AQI_LABELS)
-    # TODO: score is still TBD in gold_data_dict.md. Mirroring aqi keeps the
-    # schema satisfied without inventing a metric.
-    frame["score"] = frame["aqi"].astype(float)
+
+    # Worst pollutant's position on OpenWeather's own scale, so the whole
+    # number always matches aqi and the decimal shows progress through the band.
+    sub_indices = pd.DataFrame(
+        {name: [_sub_index(value, edges) for value in frame[name]] for name, edges in BANDS.items()},
+        index=frame.index,
+    )
+    frame["score"] = (sub_indices.max(axis=1) * 100).astype(int) / 100
     return frame
