@@ -52,12 +52,12 @@ Each city in the configuration will include a city name, latitude, and longitude
 
 
 ## Time Window
-Our team will be extracting nearly 6 years worth of historical data from each of the cities from the OpenWeather API.
+Our team will be extracting 1 year worth of historical data from each of the cities from the OpenWeather API.
 
 | Setting | Date | Unix Timestamp |
 | --- | --- | --- |
-|START | Nov 27, 2020, 00:00 UTC | 1606435200|
-| END | Oct 15, 2026, 00:00 UTC| 1792022400 |
+|START | Oct 25, 2025, 00:00 UTC | 1761350400 |
+| END | Oct 25, 2026, 00:00 UTC| 1792886400 |
 
 Format: Unix timestamps in seconds, using UTC.
 

@@ -109,12 +109,20 @@ def _standardize(frame):
     return frame
 
 def _add_rolling_aggregate(frame):
-    """ Calculate the rolling average of up to 24 AQI readings per city """
+    """ Calculate a rolling 24-hour AQI average per city """
     frame = frame.sort_values(["city", "timestamp"]).copy()
+    frame["timestamp"] = pd.to_datetime(frame["timestamp"], utc=True)
     
     frame["score"] = (
-        frame.groupby("city")["aqi"]
-        .transform(lambda s: s.rolling(window=24, min_periods=1).mean())
+        frame.groupby("city")
+        .apply(
+            lambda group: group.set_index("timestamp")["aqi"]
+            .rolling("24hr", min_periods=1)
+            .mean()
+        )
+        .reset_index(level=0, drop=True)
+        .round()
+        .astype(int) 
     )
     
     return frame

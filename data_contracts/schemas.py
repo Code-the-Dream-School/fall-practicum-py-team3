@@ -145,5 +145,5 @@ gold_example = GoldAirQuality(
     pm10=15.524,
     nh3=0.289,
     category="Moderate",
-    score=2.0
+    score=2
 )
