@@ -262,3 +262,40 @@ def test_transform_preserves_boundary_scores(aqi):
     (row,) = transform(make_raw([make_record(aqi=aqi)]), CITY)
     assert row.aqi == aqi
     assert aqi_category(row.aqi) == {1: "Good", 5: "Very Poor"}[aqi]
+    
+# ---------------------------------------------------------------------------- #
+# rolling aggregate
+
+@requires_transform
+def test_rolling_average_of_aqi():
+    import pandas as pd
+    
+    raw = pd.DataFrame([
+        {
+            "city": CITY, 
+            "timestamp": "2020-11-27T00:00+00:00", 
+            "aqi": 2,
+            "co": 300.0, "no": 1.0, "no2": 5.0, "o3": 40.0,
+            "so2": 2.0, "pm2_5": 10.0, "pm10": 15.0, "nh3": 1.0,
+        },
+        
+        {
+            "city": CITY, 
+            "timestamp": "2020-11-27T01:00+00:00",
+            "aqi": 4,
+            "co": 300.0, "no": 1.0, "no2": 5.0, "o3": 40.0,
+            "so2": 2.0, "pm2_5": 10.0, "pm10": 15.0, "nh3": 1.0,
+        },
+        
+        {
+            "city": CITY, 
+            "timestamp": "2020-11-27T02:00+00:00", 
+            "aqi": 2,
+            "co": 300.0, "no": 1.0, "no2": 5.0, "o3": 40.0,
+            "so2": 2.0, "pm2_5": 10.0, "pm10": 15.0, "nh3": 1.0,
+        },
+    ])
+    
+    result = transform(raw)
+    
+    assert [row.score for row in result] == [2.0, 3.0, 8 / 3]
