@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+﻿from datetime import datetime, timezone
 from pathlib import Path
 import sys
 import pytest
@@ -298,7 +298,7 @@ def test_rolling_average_of_aqi():
     
     result = transform(raw)
     
-    assert [row.daily_aqi for row in result] == [2.0, 3.0, 8 / 3]
+    assert [row.aqi_24h_avg for row in result] == [2.0, 3.0, 8 / 3]
 
 def db_row(timestamp, aqi, city=CITY):
     # One row shaped like raw_air_quality, with fixed pollutant values.
@@ -319,7 +319,7 @@ def test_rolling_window_drops_readings_older_than_24_hours():
         db_row("2020-11-28T01:00+00:00", aqi=1),
     ])
 
-    assert [row.daily_aqi for row in result] == [5.0, 1.0]
+    assert [row.aqi_24h_avg for row in result] == [5.0, 1.0]
 
 
 @requires_transform
@@ -331,7 +331,7 @@ def test_rolling_window_keeps_cities_separate():
         db_row("2020-11-27T01:00+00:00", aqi=5, city="Houston"),
     ])
 
-    latest = {row.city: row.daily_aqi for row in result}
+    latest = {row.city: row.aqi_24h_avg for row in result}
     assert latest == {"Boston": 1.0, "Houston": 5.0}
 
 

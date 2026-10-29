@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+﻿from datetime import datetime, timezone
 from pydantic import BaseModel, ValidationError
 
 # =======================
@@ -127,7 +127,7 @@ class GoldAirQuality(BaseModel):
     nh3: float
     category: str
     score: float
-    daily_aqi: float
+    aqi_24h_avg: float
 
 # =======================  
 # GOLD SCHEMA EXAMPLE
@@ -147,5 +147,5 @@ gold_example = GoldAirQuality(
     nh3=0.289,
     category="Moderate",
     score=2,
-    daily_aqi=2.5
+    aqi_24h_avg=2.5
 )

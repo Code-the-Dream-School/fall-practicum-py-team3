@@ -1,4 +1,4 @@
-"""Transform raw OpenWeather air-quality readings into gold records."""
+﻿"""Transform raw OpenWeather air-quality readings into gold records."""
 
 import sys
 from importlib import import_module
@@ -54,7 +54,7 @@ def transform(raw, city=None):
     frame = _derive(frame)
     frame = _add_rolling_aggregate(frame)
 
-    columns = ["city", "timestamp", "aqi", *POLLUTANTS, "category", "score", "daily_aqi"]
+    columns = ["city", "timestamp", "aqi", *POLLUTANTS, "category", "score", "aqi_24h_avg"]
     return [GoldAirQuality(**row) for row in frame[columns].to_dict(orient="records")]
 
 
@@ -157,5 +157,5 @@ def _add_rolling_aggregate(frame):
         .rolling("24h", min_periods=1)
         .mean()
     )
-    frame["daily_aqi"] = rolled.to_numpy()
+    frame["aqi_24h_avg"] = rolled.to_numpy()
     return frame

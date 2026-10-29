@@ -1,4 +1,4 @@
-# Gold Air Quality Table
+﻿# Gold Air Quality Table
 
 The gold_air_quality table stores cleaned and transformed hourly air-quality data for each city.
 
@@ -9,10 +9,10 @@ The gold table schema is defined in supabase/gold_air_quality.sql. Team members 
 - In VSCode, run load.py to load the raw data, then run load_gold.py to transform/load the gold data.
 - Once both scripts finish running, check Supabase, both tables should now include the data.
 
-If the table already exists from before `daily_aqi` was added, run this once in the SQL Editor:
+If the table already exists from before `aqi_24h_avg` was added, run this once in the SQL Editor:
 
 ```sql
-ALTER TABLE gold_air_quality ADD COLUMN IF NOT EXISTS daily_aqi NUMERIC;
+ALTER TABLE gold_air_quality ADD COLUMN IF NOT EXISTS aqi_24h_avg NUMERIC;
 ```
 
 ## Gold Table Keys and Requirements
@@ -42,7 +42,7 @@ A gold record is only written when every required field is present. If a raw rea
 | nh3        | Ammonia concentration                                                    | NUMERIC                | µg/m³                                 | payload.list[].components.nh3              | Stored as reported; row rejected if missing                    | YES       |
 | category   | Name of the AQI level                                                    | TEXT                   | Good, Fair, Moderate, Poor, Very Poor | aqi                                        | 1 = Good, 2 = Fair, 3 = Moderate, 4 = Poor, 5 = Very Poor      | YES       |
 | score      | AQI level for this hour, with a decimal for how far into the level it is | NUMERIC                | 1.00 to 5.99                          | components (so2, no2, pm10, pm2_5, o3, co) | Worst pollutant's position on OpenWeather's bands (see below)  | YES       |
-| daily_aqi  | Average AQI over the previous 24 hours for this city                     | NUMERIC                | Decimal, 1.0 to 5.0                   | aqi                                        | Rolling 24-hour mean per city (see below)                      | YES       |
+| aqi_24h_avg  | Average AQI over the previous 24 hours for this city                     | NUMERIC                | Decimal, 1.0 to 5.0                   | aqi                                        | Rolling 24-hour mean per city (see below)                      | YES       |
 
 All pollutant concentrations come from OpenWeather in µg/m³ and are stored in the same unit, so no unit conversion is needed.
 
@@ -64,16 +64,16 @@ For each pollutant, the score is its level plus how far through that level it is
 
 The whole number of the score always matches `aqi`. OpenWeather rounds concentrations before sending them, so a reading shown exactly on a cutoff (ozone at 60.0, PM2.5 at 10.0) can belong to either level, and on rare hours particle readings come back as 0 even though OpenWeather's AQI still counts them. In those cases the score is kept inside the level OpenWeather assigned. In the current data this affects 58 of 281,385 rows. The decimal lets users rank cities and hours that share the same AQI level.
 
-## Rolling Aggregate: daily_aqi
+## Rolling Aggregate: aqi_24h_avg
 
-`daily_aqi` is the average AQI for the same city over the 24 hours ending at that row's timestamp. Every hourly row has a value, and it updates each hour as the window moves forward.
+`aqi_24h_avg` is the average AQI for the same city over the 24 hours ending at that row's timestamp. Every hourly row has a value, and it updates each hour as the window moves forward.
 
 - **Window:** 24 hours by time, not 24 rows, so missing hours do not stretch the window.
 - **Per city:** each city is averaged only with its own readings.
 - **Start of the data:** the first readings average whatever is available so far, so the first day of a city's data uses fewer than 24 readings.
 - **Not rounded:** the value keeps its decimals, so 2.67 stays 2.67.
 
-This helps users see recent air quality trends. A single hour can spike, but `daily_aqi` shows whether the last day has been mostly clean or mostly polluted.
+This helps users see recent air quality trends. A single hour can spike, but `aqi_24h_avg` shows whether the last day has been mostly clean or mostly polluted.
 
 ## How These Fields Support the Product Question
 
@@ -81,4 +81,4 @@ The Sprint 1 question asks how air quality compares across cities and over time,
 
 - **category** gives the plain-language level that each EPA-based health tip is tied to.
 - **score** compares cities and hours within the same level, so two "Fair" cities can still be ranked.
-- **daily_aqi** shows how air quality is changing over time, smoothing out single-hour spikes.
+- **aqi_24h_avg** shows how air quality is changing over time, smoothing out single-hour spikes.
