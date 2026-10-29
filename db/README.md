@@ -52,6 +52,23 @@ Rules:
 - **Schema only.** Data such as `tracked_cities` is loaded by the pipeline, not by migrations.
 - **Never downgrade the team database.** Fix a bad migration on `main` with a new one.
 
+## Reading and writing data from code
+
+Use SQLAlchemy Core through `pipeline.db`. `table(name)` replaces `supabase.table(name)`. Its columns are read from the database, so there are no model classes to keep in sync with the migrations.
+
+```python
+from sqlalchemy import insert, select, update
+from pipeline.db import engine, table
+
+runs = table("pipeline_runs")
+with engine().begin() as conn:  # commits on success, rolls back on error
+    run_id = conn.execute(insert(runs).values(status="running").returning(runs.c.run_id)).scalar_one()
+    conn.execute(update(runs).where(runs.c.run_id == run_id).values(status="success"))
+    rows = conn.execute(select(runs).where(runs.c.status == "failed")).mappings().all()
+```
+
+For upserts, see `load_raw()` in `services/pipeline/src/pipeline/load/load.py`.
+
 ## "Found 2 Alembic heads" in CI
 
 You and a teammate both added a migration after the same parent. Rebase on `main`, then set your file's `down_revision` to the revision ID that `alembic heads` shows for main's migration. Run `alembic heads` again: it should print one line.

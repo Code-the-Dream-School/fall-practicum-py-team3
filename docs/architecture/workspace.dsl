@@ -119,7 +119,7 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
             deploymentNode "Amazon Web Services" "" "AWS" {
                 deploymentNode "us-east-1 (placeholder)" "" "AWS Region, should match Supabase" {
                     scheduler = infrastructureNode "EventBridge Scheduler" "Daily ingest after the last city's local midnight (~10:00 UTC). Separate Insight schedule." "Amazon EventBridge"
-                    ssm = infrastructureNode "SSM Parameter Store" "OpenWeather key, Supabase URL, Jev key (SecureString)." "AWS SSM"
+                    ssm = infrastructureNode "SSM Parameter Store" "OpenWeather key, Supabase DB URL, Jev key (SecureString)." "AWS SSM"
                     logs = infrastructureNode "CloudWatch" "Logs and failed-run alarm." "Amazon CloudWatch"
                     alerts = infrastructureNode "SNS Topic" "Failure and cost alerts to the team (Should)." "Amazon SNS"
                     budgets = infrastructureNode "AWS Budgets" "Monthly spend alarm." "AWS Budgets"

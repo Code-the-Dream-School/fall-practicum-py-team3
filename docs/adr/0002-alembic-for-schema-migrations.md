@@ -17,7 +17,7 @@ Every database (each teammate's personal Supabase, the team Supabase used by the
 ## Consequences
 
 - Connection: one `SUPABASE_DB_URL` (the Supabase session pooler URI, IPv4) replaces `SUPABASE_URL`/`SUPABASE_KEY`. It lives in local `.env` and the GitHub `production` Environment, never in committed files. `sqlalchemy>=2.1` is required so the plain `postgresql://` URI uses psycopg 3.
-- App code (pipeline, dashboard) also connects directly to Postgres (psycopg, SQLAlchemy) instead of through the Supabase REST API (supabase-py). That way schema and data access use one connection, and the code carries over to any Postgres host.
+- App code also connects directly to Postgres, not through the Supabase REST API. See [ADR 0003](0003-sqlalchemy-core-for-data-access.md).
 - Layout: `alembic.ini` at the root, revisions in `db/migrations/` with dated filenames. Tables live in the `city_air` schema, as does `alembic_version`. Migrations use schema-qualified names, and app connections set `search_path=city_air`.
 - Downs are optional. Write `downgrade()` when it is a clean inverse, otherwise `raise NotImplementedError`, never `pass`. Never downgrade the team database; fix forward with a new migration.
 - Gates: a required `migrations` PR check (exactly one Alembic head, then `alembic upgrade head` on an empty Postgres matching Supabase's major version, with Supabase roles created) plus one approving review. Merging to `main` runs `alembic upgrade head` against the team database (`production` Environment, one run at a time).

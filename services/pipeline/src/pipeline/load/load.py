@@ -1,8 +1,9 @@
 import os
 from pathlib import Path
 from dotenv import dotenv_values
-from supabase import create_client
+from sqlalchemy.dialects.postgresql import insert
 import data_contracts.schemas as schemas
+from pipeline.db import engine, table
 from pipeline.extract.extract import extract as ext, City, CITIES
 
 # Find the directory containing setup_env.py
@@ -16,29 +17,22 @@ env_path = project_root / ".env"
 config = dotenv_values(env_path)
 ext.__globals__["API_KEY"] = config.get("OPENWEATHER_API_KEY")
 
-supabase_url = config.get("SUPABASE_URL")
-supabase_key = config.get("SUPABASE_KEY")
-
-if not supabase_url:
-    raise ValueError(f"Url is not in {env_path}.")
-
-if not supabase_key:
-    raise ValueError(f"Key is not in {env_path}.")
-
-supabase = create_client(supabase_url, supabase_key)
-
 # Load raw data to db
 def load_raw(ext):
     try:
+        raw = table("raw_air_quality")
+
         # Records are unique by city and timestamp.
         # Upsert updates existing records instead of creating duplicates.
-        response = (
-            supabase.table("raw_air_quality")
-            .upsert(ext, on_conflict="city,timestamp")
-            .execute()
+        upsert = insert(raw)
+        upsert = upsert.on_conflict_do_update(
+            index_elements=["city", "timestamp"],
+            set_={c.name: upsert.excluded[c.name] for c in raw.c if not c.primary_key},
         )
+        with engine().begin() as conn:
+            conn.execute(upsert, ext)
 
-        print(f"Upserted {len(response.data)} rows into raw_air_quality")
+        print(f"Upserted {len(ext)} rows into raw_air_quality")
     
     except Exception as error:
         print(f"Failed to load raw air quality records: {error}.")
