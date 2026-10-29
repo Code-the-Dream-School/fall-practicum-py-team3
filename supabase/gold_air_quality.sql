@@ -13,6 +13,6 @@ CREATE TABLE IF NOT EXISTS gold_air_quality (
   nh3 NUMERIC,
   category TEXT,
   score NUMERIC,
-
+  daily_aqi NUMERIC,
   PRIMARY KEY (city, timestamp)
 );

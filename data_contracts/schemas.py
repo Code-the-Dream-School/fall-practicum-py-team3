@@ -127,6 +127,7 @@ class GoldAirQuality(BaseModel):
     nh3: float
     category: str
     score: float
+    daily_aqi: float
 
 # =======================  
 # GOLD SCHEMA EXAMPLE
@@ -145,5 +146,6 @@ gold_example = GoldAirQuality(
     pm10=15.524,
     nh3=0.289,
     category="Moderate",
-    score=2
+    score=2,
+    daily_aqi=2.5
 )

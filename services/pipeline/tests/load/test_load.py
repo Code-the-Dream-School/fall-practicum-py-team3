@@ -298,4 +298,58 @@ def test_rolling_average_of_aqi():
     
     result = transform(raw)
     
-    assert [row.score for row in result] == [2.0, 3.0, 8 / 3]
+    assert [row.daily_aqi for row in result] == [2.0, 3.0, 8 / 3]
+
+def db_row(timestamp, aqi, city=CITY):
+    # One row shaped like raw_air_quality, with fixed pollutant values.
+    return {
+        "city": city,
+        "timestamp": timestamp,
+        "aqi": aqi,
+        "co": 300.0, "no": 1.0, "no2": 5.0, "o3": 40.0,
+        "so2": 2.0, "pm2_5": 5.0, "pm10": 15.0, "nh3": 1.0,
+    }
+
+
+@requires_transform
+def test_rolling_window_drops_readings_older_than_24_hours():
+    # 25 hours apart, so the first reading is outside the second one's window.
+    result = transform([
+        db_row("2020-11-27T00:00+00:00", aqi=5),
+        db_row("2020-11-28T01:00+00:00", aqi=1),
+    ])
+
+    assert [row.daily_aqi for row in result] == [5.0, 1.0]
+
+
+@requires_transform
+def test_rolling_window_keeps_cities_separate():
+    result = transform([
+        db_row("2020-11-27T00:00+00:00", aqi=1, city="Boston"),
+        db_row("2020-11-27T01:00+00:00", aqi=1, city="Boston"),
+        db_row("2020-11-27T00:00+00:00", aqi=5, city="Houston"),
+        db_row("2020-11-27T01:00+00:00", aqi=5, city="Houston"),
+    ])
+
+    latest = {row.city: row.daily_aqi for row in result}
+    assert latest == {"Boston": 1.0, "Houston": 5.0}
+
+
+# ---------------------------------------------------------------------------- #
+# score agrees with aqi
+
+
+@requires_transform
+def test_score_whole_number_matches_aqi():
+    # Ozone is the worst pollutant in both rows; it crosses from Good to Fair at 60.
+    clean = dict(co=100.0, no2=5.0, so2=1.0, pm2_5=1.0, pm10=1.0)
+    raw = make_raw([
+        make_record(DT_1, aqi=1, o3=57.5, **clean),
+        make_record(DT_2, aqi=2, o3=60.5, **clean),
+    ])
+
+    good, fair = transform(raw, CITY)
+
+    assert (good.score, fair.score) == (1.95, 2.01)
+    assert int(good.score) == good.aqi
+    assert int(fair.score) == fair.aqi
