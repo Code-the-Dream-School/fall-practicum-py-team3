@@ -353,3 +353,45 @@ def test_score_whole_number_matches_aqi():
     assert (good.score, fair.score) == (1.95, 2.01)
     assert int(good.score) == good.aqi
     assert int(fair.score) == fair.aqi
+
+
+@requires_transform
+def test_score_on_a_band_edge_stays_in_the_lower_level():
+    # OpenWeather counts a value exactly on a cutoff as the lower level:
+    # ozone at 60 is still Good, and at 100 it is still Fair.
+    clean = dict(co=100.0, no2=5.0, so2=1.0, pm2_5=1.0, pm10=1.0)
+    raw = make_raw([
+        make_record(DT_1, aqi=1, o3=60.0, **clean),
+        make_record(DT_2, aqi=2, o3=100.0, **clean),
+    ])
+
+    good, fair = transform(raw, CITY)
+
+    assert (good.score, fair.score) == (1.99, 2.99)
+
+
+@requires_transform
+def test_score_follows_openweather_when_a_reading_sits_on_a_cutoff():
+    # OpenWeather rounds before sending, so ozone shown as 60.0 can be Good or
+    # Fair. The score follows whichever level OpenWeather assigned.
+    clean = dict(co=100.0, no2=5.0, so2=1.0, pm2_5=1.0, pm10=1.0)
+    raw = make_raw([
+        make_record(DT_1, aqi=1, o3=60.0, **clean),
+        make_record(DT_2, aqi=2, o3=60.0, **clean),
+    ])
+
+    good, fair = transform(raw, CITY)
+
+    assert (good.score, fair.score) == (1.99, 2.0)
+
+
+@requires_transform
+def test_score_stays_in_openweather_level_when_particles_read_zero():
+    # Some hours report PM2.5 and PM10 as 0 while the AQI still counts them.
+    raw = make_raw([
+        make_record(aqi=3, co=380.0, no2=30.0, so2=2.0, o3=33.0, pm2_5=0.0, pm10=0.0),
+    ])
+
+    (row,) = transform(raw, CITY)
+
+    assert row.score == 3.0
