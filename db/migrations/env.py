@@ -30,6 +30,7 @@ def run_migrations_offline() -> None:
         version_table_schema=SCHEMA,
     )
     with context.begin_transaction():
+        context.execute(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}")
         context.run_migrations()
 
 
