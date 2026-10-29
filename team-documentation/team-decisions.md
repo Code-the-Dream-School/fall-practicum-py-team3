@@ -91,7 +91,9 @@ The labels live in one lookup dictionary in code. The Transform step adds the la
 
 ## Database Decision
 
-Choice: Supabase, because the whole team and our cloud deployment need to share one database. Connection details are stored in environment variables, never in GitHub. Raw responses (as JSONB), Daily Readings, Insights, and pipeline run records all live in Supabase. The pipeline copies `config/cities.yaml` into a `tracked_cities` table, and a `division_figures` database view computes the population-weighted Division Figures, so the dashboard and the Insight stage use one calculation.
+Choice: Supabase, because the whole team and our cloud deployment need to share one database. Connection details are stored in environment variables (local `.env`, GitHub Environment secrets), never in committed files. All code and migrations connect with one `SUPABASE_DB_URL` (Supabase → Connect → Session pooler).
+
+Schema changes go only through Alembic migrations in `db/migrations/`, never through the SQL Editor (see [ADR 0002](../docs/adr/0002-alembic-for-schema-migrations.md)). Raw responses (as JSONB), Daily Readings, Insights, and pipeline run records all live in Supabase. The pipeline copies `config/cities.yaml` into a `tracked_cities` table, and a `division_figures` database view computes the population-weighted Division Figures, so the dashboard and the Insight stage use one calculation.
 
 ## ETL Process
 
