@@ -2,9 +2,7 @@
 
 The gold_air_quality table stores cleaned and transformed hourly air-quality data for each city.
 
-The gold table schema is defined in supabase/gold_air_quality.sql. Team members can use this SQL script to create the Gold table in their own Supabase testing projects.
-
-- Note: The script creates the table structure but does not insert data.
+The table is `city_air.gold_air_quality`, created by the Alembic migrations in `db/migrations/`. See [db/README.md](../db/README.md) for how to apply them.
 
 ## Gold Table Keys and Requirements
 

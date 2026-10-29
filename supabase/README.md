@@ -1,4 +1,6 @@
-## 001_pipeline_runs.sql — `pipeline_runs`
+## `city_air.pipeline_runs`
+
+Created by the Alembic migrations in `db/migrations/` (see [db/README.md](../db/README.md)).
 
 One row per pipeline run, recording when the run started and ended, whether it
 succeeded, and how many rows moved through each stage. Timestamps are the
