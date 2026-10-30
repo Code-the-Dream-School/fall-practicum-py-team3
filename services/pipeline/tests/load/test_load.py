@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+﻿from datetime import datetime, timezone
 from pathlib import Path
 import sys
 import pytest
@@ -262,3 +262,136 @@ def test_transform_preserves_boundary_scores(aqi):
     (row,) = transform(make_raw([make_record(aqi=aqi)]), CITY)
     assert row.aqi == aqi
     assert aqi_category(row.aqi) == {1: "Good", 5: "Very Poor"}[aqi]
+    
+# ---------------------------------------------------------------------------- #
+# rolling aggregate
+
+@requires_transform
+def test_rolling_average_of_aqi():
+    import pandas as pd
+    
+    raw = pd.DataFrame([
+        {
+            "city": CITY, 
+            "timestamp": "2020-11-27T00:00+00:00", 
+            "aqi": 2,
+            "co": 300.0, "no": 1.0, "no2": 5.0, "o3": 40.0,
+            "so2": 2.0, "pm2_5": 10.0, "pm10": 15.0, "nh3": 1.0,
+        },
+        
+        {
+            "city": CITY, 
+            "timestamp": "2020-11-27T01:00+00:00",
+            "aqi": 4,
+            "co": 300.0, "no": 1.0, "no2": 5.0, "o3": 40.0,
+            "so2": 2.0, "pm2_5": 10.0, "pm10": 15.0, "nh3": 1.0,
+        },
+        
+        {
+            "city": CITY, 
+            "timestamp": "2020-11-27T02:00+00:00", 
+            "aqi": 2,
+            "co": 300.0, "no": 1.0, "no2": 5.0, "o3": 40.0,
+            "so2": 2.0, "pm2_5": 10.0, "pm10": 15.0, "nh3": 1.0,
+        },
+    ])
+    
+    result = transform(raw)
+    
+    assert [row.aqi_24h_avg for row in result] == [2.0, 3.0, 8 / 3]
+
+def db_row(timestamp, aqi, city=CITY):
+    # One row shaped like raw_air_quality, with fixed pollutant values.
+    return {
+        "city": city,
+        "timestamp": timestamp,
+        "aqi": aqi,
+        "co": 300.0, "no": 1.0, "no2": 5.0, "o3": 40.0,
+        "so2": 2.0, "pm2_5": 5.0, "pm10": 15.0, "nh3": 1.0,
+    }
+
+
+@requires_transform
+def test_rolling_window_drops_readings_older_than_24_hours():
+    # 25 hours apart, so the first reading is outside the second one's window.
+    result = transform([
+        db_row("2020-11-27T00:00+00:00", aqi=5),
+        db_row("2020-11-28T01:00+00:00", aqi=1),
+    ])
+
+    assert [row.aqi_24h_avg for row in result] == [5.0, 1.0]
+
+
+@requires_transform
+def test_rolling_window_keeps_cities_separate():
+    result = transform([
+        db_row("2020-11-27T00:00+00:00", aqi=1, city="Boston"),
+        db_row("2020-11-27T01:00+00:00", aqi=1, city="Boston"),
+        db_row("2020-11-27T00:00+00:00", aqi=5, city="Houston"),
+        db_row("2020-11-27T01:00+00:00", aqi=5, city="Houston"),
+    ])
+
+    latest = {row.city: row.aqi_24h_avg for row in result}
+    assert latest == {"Boston": 1.0, "Houston": 5.0}
+
+
+# ---------------------------------------------------------------------------- #
+# score agrees with aqi
+
+
+@requires_transform
+def test_score_whole_number_matches_aqi():
+    # Ozone is the worst pollutant in both rows; it crosses from Good to Fair at 60.
+    clean = dict(co=100.0, no2=5.0, so2=1.0, pm2_5=1.0, pm10=1.0)
+    raw = make_raw([
+        make_record(DT_1, aqi=1, o3=57.5, **clean),
+        make_record(DT_2, aqi=2, o3=60.5, **clean),
+    ])
+
+    good, fair = transform(raw, CITY)
+
+    assert (good.score, fair.score) == (1.95, 2.01)
+    assert int(good.score) == good.aqi
+    assert int(fair.score) == fair.aqi
+
+
+@requires_transform
+def test_score_on_a_band_edge_stays_in_the_lower_level():
+    # OpenWeather counts a value exactly on a cutoff as the lower level:
+    # ozone at 60 is still Good, and at 100 it is still Fair.
+    clean = dict(co=100.0, no2=5.0, so2=1.0, pm2_5=1.0, pm10=1.0)
+    raw = make_raw([
+        make_record(DT_1, aqi=1, o3=60.0, **clean),
+        make_record(DT_2, aqi=2, o3=100.0, **clean),
+    ])
+
+    good, fair = transform(raw, CITY)
+
+    assert (good.score, fair.score) == (1.99, 2.99)
+
+
+@requires_transform
+def test_score_follows_openweather_when_a_reading_sits_on_a_cutoff():
+    # OpenWeather rounds before sending, so ozone shown as 60.0 can be Good or
+    # Fair. The score follows whichever level OpenWeather assigned.
+    clean = dict(co=100.0, no2=5.0, so2=1.0, pm2_5=1.0, pm10=1.0)
+    raw = make_raw([
+        make_record(DT_1, aqi=1, o3=60.0, **clean),
+        make_record(DT_2, aqi=2, o3=60.0, **clean),
+    ])
+
+    good, fair = transform(raw, CITY)
+
+    assert (good.score, fair.score) == (1.99, 2.0)
+
+
+@requires_transform
+def test_score_stays_in_openweather_level_when_particles_read_zero():
+    # Some hours report PM2.5 and PM10 as 0 while the AQI still counts them.
+    raw = make_raw([
+        make_record(aqi=3, co=380.0, no2=30.0, so2=2.0, o3=33.0, pm2_5=0.0, pm10=0.0),
+    ])
+
+    (row,) = transform(raw, CITY)
+
+    assert row.score == 3.0

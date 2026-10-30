@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS gold_air_quality (
+﻿CREATE TABLE IF NOT EXISTS gold_air_quality (
 
   city TEXT NOT NULL,
   timestamp TIMESTAMPTZ NOT NULL,
@@ -13,6 +13,6 @@ CREATE TABLE IF NOT EXISTS gold_air_quality (
   nh3 NUMERIC,
   category TEXT,
   score NUMERIC,
-
+  aqi_24h_avg NUMERIC,
   PRIMARY KEY (city, timestamp)
 );
