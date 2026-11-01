@@ -30,7 +30,7 @@ How do air quality levels and dominant pollutants compare across 33 US cities, u
 - **Geography:** United States only.
 - **Cities:** 33 cities across the 9 U.S. Census Divisions (see [Cities](#cities)). No Alaska or Hawaii.
 - **Time range:** November 2020 (the start of OpenWeather's history) to today, about six years, with new data added daily after that.
-- **Granularity:** One Daily Reading per city per day, using the city's local date. OpenWeather returns hourly data, so a Daily Reading keeps the worst hourly AQI of that day and the mean of each pollutant. Raw data stays hourly.
+- **Granularity:** One gold row per city per hour (UTC), matching OpenWeather's hourly data; `aqi_24h_avg` adds a rolling 24-hour average. Daily or monthly figures are computed from gold when needed. Updated to the current code in the [LLM Enrichment proposal](../docs/architecture/llm-enrichment.md).
 - **Out of scope:** Other countries, forecasts, and station-based data sources.
 
 ## Cities
@@ -99,9 +99,9 @@ Extract: For each city, call the API with its coordinates and a time window. Ret
 
 Load raw: Save the raw response along with the request details and the time we retrieved it. Rerunning does not create duplicates.
 
-Transform: Turn hourly raw data into one Daily Reading per city per local date (worst hourly AQI, mean pollutants). Add the city name, the AQI label and health tip from the lookup, attach units from the constants, and handle missing values (keep the row and store the missing pollutant as null).
+Transform: Turn hourly raw data into hourly gold rows per city: AQI, category, score, rolling `aqi_24h_avg`, and the 8 pollutants. A response with a missing required field is rejected, not filled.
 
-Load: Save Daily Readings into Supabase. Use city plus local date as the unique key so rerunning the pipeline does not create duplicates.
+Load: Save gold rows into Supabase (`gold_air_quality`). Use city plus timestamp as the unique key so rerunning the pipeline does not create duplicates.
 
 Insights (proposed, see [ADR 0001](../docs/adr/0001-use-jev-for-insights.md)): Python computes facts per city-month, the Jev model makes typed judgments about them, and templates turn them into a short plain-language Insight.
 
