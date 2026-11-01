@@ -2,11 +2,12 @@
 
 ## Team Meetings/Communications
 - Use Slack daily for async discussions.
+- We can use PRs with only `.md` files for proposals and discussions for our convenience
 - Team will meet weekly via Zoom every Thursday at 3:30 PM EST.
 - Adhoc Zoom meetings with available team members as needed.
 
 ## Tasks and Responsibilities
-- CJ will be creating basic tickets for each sprint.  
+- CJ will be creating basic tickets for each sprint.
 - We should choose a team leader to coordinate work (can rotate/select a different team leader)
 - Team leader should delegate the tasks to each team member.
 
