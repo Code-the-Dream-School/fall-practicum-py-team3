@@ -54,6 +54,8 @@ Each city in the configuration will include a city name, latitude, and longitude
 ## Time Window
 Our team will be extracting 1 year worth of historical data from each of the cities from the OpenWeather API.
 
+OpenWeather has history back to November 2020, but we start with 1 year to keep the database small while the pipeline is new. The team agreed to extend the window once we know the database has room for more.
+
 | Setting | Date | Unix Timestamp |
 | --- | --- | --- |
 |START | Oct 25, 2025, 00:00 UTC | 1761350400 |

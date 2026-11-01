@@ -1,4 +1,4 @@
-from pipeline.transform.transform import transform
+from pipeline.transform.transform import REQUIRED, transform
 from pipeline.load.load import supabase
 
 
@@ -28,6 +28,17 @@ def load_gold():
             start += batch_size
             
         print(f"Fetched {len(raw_records)} raw records.")
+
+        # transform rejects the whole batch if any row is missing a required
+        # value, so drop incomplete rows first and report how many were skipped
+        complete_records = [
+            record for record in raw_records
+            if all(record.get(field) is not None for field in REQUIRED)
+        ]
+        skipped = len(raw_records) - len(complete_records)
+        if skipped:
+            print(f"Skipped {skipped} raw records with missing values.")
+        raw_records = complete_records
         
         if not raw_records:
             print("No raw records to transform.")
@@ -68,6 +79,7 @@ def load_gold():
         
     except Exception as error:
         print(f"Failed to load gold air quality records: {error}.")
+        raise
         
 if __name__ == "__main__":
     load_gold()
