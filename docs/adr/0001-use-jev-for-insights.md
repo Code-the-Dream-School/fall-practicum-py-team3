@@ -2,18 +2,19 @@
 status: proposed
 ---
 
-# Use Jev for Insights
+# Use Jev for judgments and gpt-4o-mini for Insight text
 
-Sprint 3 needs an AI stage that adds something a rule-based transform cannot. We propose that Python computes the facts for each city-month, TypeSafe's Jev model (via AI/ML API) makes typed judgments about them (choice of likely cause, score for how unusual, yes/no for "getting worse"), and fixed sentence templates turn the judgments into an Insight. Jev returns decisions, not prose, so it cannot invent claims, and it is far cheaper than a text LLM (about $0.05 per 1M input tokens, output free, as listed in October 2026).
+Sprint 3 needs an LLM Enrichment stage that adds something a rule-based transform cannot. Python computes the facts for each Tracked City month, TypeSafe's Jev model (via AI/ML API) makes typed judgments about them (pollution profile, how unusual, probability that it is "getting worse"), and `gpt-4o-mini` writes a short Insight from those facts and judgments. If the written text is unusable, a fixed template writes the Insight from the judgments instead. Jev returns decisions, not prose, so the judgments cannot invent claims; it is also cheap (input listed at $0.042–0.058 per 1M tokens in November 2026, output free; [API reference](https://docs.aimlapi.com/api-references/decision-models/typesafe/jev), [model page](https://aimlapi.com/models/typesafe-jev)). Details: [LLM Enrichment contract](../architecture/llm-enrichment.md).
 
 ## Considered Options
 
-- **Text LLM writes the Insight**: most flexible wording, but higher cost and risk of made-up claims on health-related text.
-- **Jev judges, a text LLM writes**: two providers, two keys, more cost.
-- **Jev judges, templates write** (chosen).
+- **Text LLM does everything**: one call, but labels and wording both come from a model that can invent claims on health-related text.
+- **Jev judges, templates write**: safest, but stiff wording that reads like a rule-based transform.
+- **Jev judges, a text LLM writes, template fallback** (chosen): typed judgments where we need reliability, natural wording where we want it, and every month still gets an Insight. Both models run through AI/ML API.
 
 ## Consequences
 
-- Jev is weak at arithmetic, counting and date comparison, so all numbers are computed in Python before asking.
-- Jev launched in September 2026. Only the Jev Judge module knows the provider, so it can be swapped for a text LLM without touching other stages.
+- LLMs are weak at arithmetic, counting and date comparison, so all numbers are computed in Python before asking.
+- Jev launched in September 2026. Only the enrichment module knows the providers, so either model can be swapped without touching other stages.
+- The writer's output is checked (length, health-advice blocklist); failures fall back to the template.
 - Health Tips stay a fixed EPA-based lookup and are not part of this decision.

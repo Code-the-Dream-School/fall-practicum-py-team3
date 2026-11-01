@@ -11,7 +11,7 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
         team = person "Project Team" "fall26-py-team3, as operators: edit the city list, run Backfill Runs, watch Pipeline Runs."
 
         openWeather = softwareSystem "OpenWeather Air Pollution API" "Modelled hourly air pollution history per coordinate, from Nov 2020." "External"
-        jev = softwareSystem "Jev Decision API" "[Proposed] TypeSafe Jev via AI/ML API. Returns typed judgments: choice, score, yes/no." "External,Proposed"
+        aiMlApi = softwareSystem "AI/ML API" "[Proposed] Hosted model API for the LLM Enrichment stage. Serves TypeSafe Jev (typed judgments: choice, score, yes/no) and gpt-4o-mini (Insight text)." "External,Proposed"
 
         cat = softwareSystem "City Air Tracker" "Collects daily air quality for 33 Tracked Cities and explains it on a dashboard." {
             citiesFile = container "City Configuration" "33 Tracked Cities: name, state, Division, lat/lon, timezone, 2020 metro population." "YAML in Git (config/cities.yaml)" "File"
@@ -19,22 +19,22 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
             pipeline = container "Pipeline" "Stage functions plus thin entry points. Stages never depend on the caller." "Python 3.12, Pydantic, pandas" {
                 prefectFlow = component "Prefect Flow" "Local entry point for Backfill and Incremental Runs. Retries network steps only." "Prefect @flow"
                 ingestHandler = component "Ingest Handler" "AWS entry point for the daily Incremental Run." "AWS Lambda handler"
-                insightHandler = component "Insight Handler" "[Proposed] AWS entry point that builds missing Insights." "AWS Lambda handler" "Proposed"
+                llmEnrichmentHandler = component "LLM Enrichment Handler" "[Proposed] AWS entry point for the LLM Enrichment stage: builds missing Insights." "AWS Lambda handler" "Proposed"
                 runTracker = component "Run Tracker" "Opens and closes a Pipeline Run with trigger, mode, status and counts." "Python"
 
                 cityConfig = component "City Config Loader" "Loads and validates Tracked Cities; syncs them to tracked_cities." "Python, Pydantic, PyYAML"
                 extract = component "extract()" "Calls OpenWeather for one city and window. Returns the Raw Response unchanged." "Python, requests"
                 loadRaw = component "load_raw()" "Idempotent write of Raw Responses." "Python, psycopg"
-                transform = component "transform()" "Raw Responses to Daily Readings: local date, worst hourly AQI Level, mean pollutants, nulls kept." "Python, pandas"
+                transform = component "transform()" "Raw Responses to hourly gold rows (UTC): AQI Level, category, score, rolling aqi_24h_avg, 8 pollutants. Rejects responses with missing required fields." "Python, pandas"
                 lookups = component "AQI and Health Tip Lookup" "AQI Level labels, pollutant units, EPA-based Health Tips." "Python constants"
-                loadGold = component "load_gold()" "Idempotent upsert of Daily Readings on (city, local date)." "Python, psycopg"
+                loadGold = component "load_gold()" "Idempotent upsert of hourly gold rows on (city, timestamp)." "Python, psycopg"
 
-                insightFacts = component "Insight Facts Builder" "[Proposed] Computes trends, worst periods and anomalies per city-month in Python." "Python, pandas" "Proposed"
-                jevJudge = component "Jev Judge" "[Proposed] Asks Jev typed questions about the facts. Only module that knows the provider." "Python" "Proposed"
-                insightWriter = component "Insight Writer" "[Proposed] Fills sentence templates from facts and judgments, records model and prompt version." "Python" "Proposed"
+                insightFacts = component "Insight Facts Builder" "[Proposed] Computes facts per Tracked City month from hourly gold: coverage, pollutant means, worst AQI Level, AQI Level shares, year-over-year change, z-scores. Skips incomplete months and months under 75% coverage." "Python, pandas" "Proposed"
+                jevJudge = component "Jev Judge" "[Proposed] Asks Jev (typesafe/jev-1.14) for getting_worse, pollution_profile and unusualness." "Python" "Proposed"
+                insightWriter = component "Insight Writer" "[Proposed] Asks gpt-4o-mini for a 1-2 sentence Insight from facts and judgments; validates it, falls back to a fixed template, records model and prompt version, upserts insights as enriched, skipped or failed." "Python" "Proposed"
             }
 
-            database = container "Database" "Tables: tracked_cities, raw_air_pollution (JSONB), daily_readings, insights, pipeline_runs. View: division_figures (population-weighted)." "Supabase (PostgreSQL)" "Database"
+            database = container "Database" "Tables: tracked_cities, raw_air_pollution (JSONB), gold_air_quality (hourly), insights, pipeline_runs. View: division_figures (population-weighted)." "Supabase (PostgreSQL)" "Database"
 
             dashboard = container "Dashboard" "City and Division views, AQI history, Health Tips, Insights, modelled-data notice." "Streamlit, Plotly" {
                 cityView = component "City View" "Pick a Tracked City: latest AQI Level and Health Tip, pollutant history, Insights." "Streamlit page"
@@ -49,7 +49,7 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
         viewer -> cat "Compares air quality across cities and Divisions"
         team -> cat "Configures cities, runs backfills, monitors runs"
         cat -> openWeather "Fetches hourly air pollution history" "HTTPS/JSON"
-        cat -> jev "Asks typed questions to build Insights" "HTTPS/JSON" "Proposed"
+        cat -> aiMlApi "Asks Jev and gpt-4o-mini to build Insights" "HTTPS/JSON" "Proposed"
 
         # L2
         viewer -> dashboard "Picks a city or Division, reads charts and tips" "HTTPS"
@@ -57,9 +57,9 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
         team -> pipeline "Starts Backfill Runs locally"
         pipeline -> citiesFile "Reads Tracked Cities"
         pipeline -> openWeather "Fetches hourly history" "HTTPS/JSON"
-        pipeline -> database "Writes Tracked Cities, Raw Responses, Daily Readings, Insights, Pipeline Runs" "SQL"
-        pipeline -> jev "Asks typed questions" "HTTPS/JSON" "Proposed"
-        dashboard -> database "Reads Daily Readings, Division Figures, Insights (read-only user)" "SQL"
+        pipeline -> database "Writes Tracked Cities, Raw Responses, hourly gold, Insights, Pipeline Runs" "SQL"
+        pipeline -> aiMlApi "Asks Jev and gpt-4o-mini" "HTTPS/JSON" "Proposed"
+        dashboard -> database "Reads hourly gold, Division Figures, Insights (read-only user)" "SQL"
 
         # L3: dashboard
         viewer -> cityView "Picks a city"
@@ -70,7 +70,7 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
         divisionView -> charts "Builds charts"
         cityView -> uiStates "Shows states and notice"
         divisionView -> uiStates "Shows states and notice"
-        dataAccess -> database "Reads daily_readings, division_figures, insights" "SQL"
+        dataAccess -> database "Reads gold_air_quality, division_figures, insights" "SQL"
 
         # L3: entry points
         team -> prefectFlow "Starts Backfill or Incremental Run"
@@ -79,18 +79,18 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
         prefectFlow -> extract "Calls per city and window"
         prefectFlow -> loadRaw "Passes Raw Responses"
         prefectFlow -> transform "Passes Raw Responses"
-        prefectFlow -> loadGold "Passes Daily Readings"
-        prefectFlow -> insightFacts "Runs Insight stage" "" "Proposed"
+        prefectFlow -> loadGold "Passes hourly gold rows"
+        prefectFlow -> insightFacts "Runs LLM Enrichment stage" "" "Proposed"
 
         ingestHandler -> runTracker "Opens and closes run"
         ingestHandler -> cityConfig "Loads cities"
         ingestHandler -> extract "Calls per city and window"
         ingestHandler -> loadRaw "Passes Raw Responses"
         ingestHandler -> transform "Passes Raw Responses"
-        ingestHandler -> loadGold "Passes Daily Readings"
+        ingestHandler -> loadGold "Passes hourly gold rows"
 
-        insightHandler -> runTracker "Opens and closes run" "" "Proposed"
-        insightHandler -> insightFacts "Runs Insight stage" "" "Proposed"
+        llmEnrichmentHandler -> runTracker "Opens and closes run" "" "Proposed"
+        llmEnrichmentHandler -> insightFacts "Runs LLM Enrichment stage" "" "Proposed"
 
         # L3: stages
         runTracker -> database "Writes pipeline_runs" "SQL"
@@ -99,11 +99,12 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
         extract -> openWeather "GET /air_pollution/history" "HTTPS/JSON"
         loadRaw -> database "Upserts raw_air_pollution" "SQL"
         transform -> lookups "Uses labels, units, Health Tips"
-        loadGold -> database "Upserts daily_readings" "SQL"
-        insightFacts -> database "Reads Daily Readings without an Insight" "SQL" "Proposed"
+        loadGold -> database "Upserts gold_air_quality" "SQL"
+        insightFacts -> database "Reads hourly gold without an Insight" "SQL" "Proposed"
         insightFacts -> jevJudge "Passes computed facts" "" "Proposed"
-        jevJudge -> jev "POST /v1/decisions" "HTTPS/JSON" "Proposed"
+        jevJudge -> aiMlApi "POST /v1/decisions (Jev)" "HTTPS/JSON" "Proposed"
         jevJudge -> insightWriter "Passes typed judgments" "" "Proposed"
+        insightWriter -> aiMlApi "POST chat completions (gpt-4o-mini)" "HTTPS/JSON" "Proposed"
         insightWriter -> database "Upserts insights" "SQL" "Proposed"
 
         aws = deploymentEnvironment "AWS" {
@@ -119,7 +120,7 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
             deploymentNode "Amazon Web Services" "" "AWS" {
                 deploymentNode "us-east-1 (placeholder)" "" "AWS Region, should match Supabase" {
                     scheduler = infrastructureNode "EventBridge Scheduler" "Daily ingest after the last city's local midnight (~10:00 UTC). Separate Insight schedule." "Amazon EventBridge"
-                    ssm = infrastructureNode "SSM Parameter Store" "OpenWeather key, Supabase URL, Jev key (SecureString)." "AWS SSM"
+                    ssm = infrastructureNode "SSM Parameter Store" "OpenWeather key, Supabase URL, AI/ML API key (SecureString)." "AWS SSM"
                     logs = infrastructureNode "CloudWatch" "Logs and failed-run alarm." "Amazon CloudWatch"
                     alerts = infrastructureNode "SNS Topic" "Failure and cost alerts to the team (Should)." "Amazon SNS"
                     budgets = infrastructureNode "AWS Budgets" "Monthly spend alarm." "AWS Budgets"
@@ -147,7 +148,7 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
             }
 
             deploymentNode "AI/ML API" "[Proposed]" "SaaS" "Proposed" {
-                softwareSystemInstance jev insightGroup "Proposed"
+                softwareSystemInstance aiMlApi insightGroup "Proposed"
             }
 
             scheduler -> ingestInstance "Invokes daily"
@@ -195,8 +196,8 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
             loadRaw -> database "Upsert raw_air_pollution on (lat, lon, start, end)"
             ingestHandler -> transform "Raw Responses"
             transform -> lookups "AQI label and Health Tip"
-            ingestHandler -> loadGold "Daily Readings"
-            loadGold -> database "Upsert daily_readings on (city, local date)"
+            ingestHandler -> loadGold "Hourly gold rows"
+            loadGold -> database "Upsert gold_air_quality on (city, timestamp)"
             ingestHandler -> runTracker "Close run: status and counts"
             runTracker -> database "Update pipeline_runs row"
             autoLayout lr

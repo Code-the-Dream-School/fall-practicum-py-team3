@@ -103,7 +103,7 @@ Transform: Turn hourly raw data into hourly gold rows per city: AQI, category, s
 
 Load: Save gold rows into Supabase (`gold_air_quality`). Use city plus timestamp as the unique key so rerunning the pipeline does not create duplicates.
 
-Insights (proposed, see [ADR 0001](../docs/adr/0001-use-jev-for-insights.md)): Python computes facts per city-month, the Jev model makes typed judgments about them, and templates turn them into a short plain-language Insight.
+LLM Enrichment (proposed, see [ADR 0001](../docs/adr/0001-use-jev-for-insights.md) and the [contract](../docs/architecture/llm-enrichment.md)): Python computes facts per Tracked City month, Jev makes typed judgments about them, and `gpt-4o-mini` writes a short plain-language Insight, with a fixed template as the fallback.
 
 The full history is loaded once (Backfill Run). After that, a scheduled AWS Lambda function adds each new day (Incremental Run). Locally, a Prefect flow runs the same stage functions. AWS region is not decided yet; `us-east-1` is a placeholder and should match the Supabase project's region.
 
