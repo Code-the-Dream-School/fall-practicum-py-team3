@@ -4,7 +4,7 @@ C4 diagrams for City Air Tracker. They are a **plan** and will change as the tea
 
 - Source of truth: [`workspace.dsl`](./workspace.dsl) ([Structurizr DSL](https://docs.structurizr.com/dsl)). One model, many views, so a rename shows up in every diagram.
 - Terms: [`CONTEXT.md`](../../CONTEXT.md). Decisions: [`team-decisions.md`](../../team-documentation/team-decisions.md) and [`docs/adr/`](../adr/).
-- Grey, dashed elements are **Proposed** (not agreed yet), see [ADR 0001](../adr/0001-use-jev-for-insights.md).
+- Grey, dashed elements are **Proposed** (not agreed yet), see [ADR 0001](../adr/0001-use-openai-for-llm-enrichment.md).
 
 [C4](https://c4model.com) zooms in step by step: L1 shows the system as one box, L2 opens it into runnable parts, L3 opens one part into its components. Deployment and Dynamic views are side views: where things run, and what happens in what order.
 

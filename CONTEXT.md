@@ -43,7 +43,7 @@ A plain-language explanation of how a Tracked City's air quality behaved over a 
 _Avoid_: summary, AI explanation
 
 **LLM Enrichment**:
-The stage that asks AI models about each completed calendar month of a Tracked City's air quality and stores what they return, including the Insight.
+The stage that asks an AI model to write the Insight for each completed calendar month of a Tracked City's air quality and stores the result.
 _Avoid_: AI stage, insight stage, enrichment step
 
 ## Operations
