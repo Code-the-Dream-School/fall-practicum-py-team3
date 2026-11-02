@@ -1,7 +1,7 @@
 /*
  * City Air Tracker — C4 model (PLAN, subject to change).
  * Source of truth for all architecture diagrams. Render with ./render.sh.
- * Elements tagged "Proposed" are not agreed yet (see docs/adr/0001-use-jev-for-insights.md).
+ * Elements tagged "Proposed" are not agreed yet (see docs/adr/0001-use-openai-for-llm-enrichment.md).
  * Terms follow CONTEXT.md.
  */
 workspace "City Air Tracker" "Compares air quality across U.S. cities and Census Divisions from November 2020 onward." {
@@ -11,7 +11,7 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
         team = person "Project Team" "fall26-py-team3, as operators: edit the city list, run Backfill Runs, watch Pipeline Runs."
 
         openWeather = softwareSystem "OpenWeather Air Pollution API" "Modelled hourly air pollution history per coordinate, from Nov 2020." "External"
-        aiMlApi = softwareSystem "AI/ML API" "[Proposed] Hosted model API for the LLM Enrichment stage. Serves TypeSafe Jev (typed judgments: choice, score, yes/no) and gpt-4o-mini (Insight text)." "External,Proposed"
+        openAi = softwareSystem "OpenAI API" "[Proposed] Hosted model API for the LLM Enrichment stage. Serves gpt-4o-mini (Insight text)." "External,Proposed"
 
         cat = softwareSystem "City Air Tracker" "Collects daily air quality for 33 Tracked Cities and explains it on a dashboard." {
             citiesFile = container "City Configuration" "33 Tracked Cities: name, state, Division, lat/lon, timezone, 2020 metro population." "YAML in Git (config/cities.yaml)" "File"
@@ -29,9 +29,8 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
                 lookups = component "AQI and Health Tip Lookup" "AQI Level labels, pollutant units, EPA-based Health Tips." "Python constants"
                 loadGold = component "load_gold()" "Idempotent upsert of hourly gold rows on (city, timestamp)." "Python, psycopg"
 
-                insightFacts = component "Insight Facts Builder" "[Proposed] Computes facts per Tracked City month from hourly gold: coverage, pollutant means, worst AQI Level, AQI Level shares, year-over-year change, z-scores. Skips incomplete months and months under 75% coverage." "Python, pandas" "Proposed"
-                jevJudge = component "Jev Judge" "[Proposed] Asks Jev (typesafe/jev-1.14) for getting_worse, pollution_profile and unusualness." "Python" "Proposed"
-                insightWriter = component "Insight Writer" "[Proposed] Asks gpt-4o-mini for a 1-2 sentence Insight from facts and judgments; validates it, falls back to a fixed template, records model and prompt version, upserts insights as enriched, skipped or failed." "Python" "Proposed"
+                insightFacts = component "Insight Facts Builder" "[Proposed] Computes facts per Tracked City month from hourly gold: coverage, pollutant means, worst AQI Level, AQI Level shares, year-over-year change. Skips incomplete months and months under 75% coverage." "Python, pandas" "Proposed"
+                insightWriter = component "Insight Writer" "[Proposed] Asks gpt-4o-mini for a 1-2 sentence Insight from the facts; validates it, falls back to a fixed template, records model and prompt version, upserts insights as enriched, skipped or failed." "Python" "Proposed"
             }
 
             database = container "Database" "Tables: tracked_cities, raw_air_pollution (JSONB), gold_air_quality (hourly), insights, pipeline_runs. View: division_figures (population-weighted)." "Supabase (PostgreSQL)" "Database"
@@ -49,7 +48,7 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
         viewer -> cat "Compares air quality across cities and Divisions"
         team -> cat "Configures cities, runs backfills, monitors runs"
         cat -> openWeather "Fetches hourly air pollution history" "HTTPS/JSON"
-        cat -> aiMlApi "Asks Jev and gpt-4o-mini to build Insights" "HTTPS/JSON" "Proposed"
+        cat -> openAi "Asks gpt-4o-mini to write Insights" "HTTPS/JSON" "Proposed"
 
         # L2
         viewer -> dashboard "Picks a city or Division, reads charts and tips" "HTTPS"
@@ -58,7 +57,7 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
         pipeline -> citiesFile "Reads Tracked Cities"
         pipeline -> openWeather "Fetches hourly history" "HTTPS/JSON"
         pipeline -> database "Writes Tracked Cities, Raw Responses, hourly gold, Insights, Pipeline Runs" "SQL"
-        pipeline -> aiMlApi "Asks Jev and gpt-4o-mini" "HTTPS/JSON" "Proposed"
+        pipeline -> openAi "Asks gpt-4o-mini" "HTTPS/JSON" "Proposed"
         dashboard -> database "Reads hourly gold, Division Figures, Insights (read-only user)" "SQL"
 
         # L3: dashboard
@@ -101,10 +100,8 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
         transform -> lookups "Uses labels, units, Health Tips"
         loadGold -> database "Upserts gold_air_quality" "SQL"
         insightFacts -> database "Reads hourly gold without an Insight" "SQL" "Proposed"
-        insightFacts -> jevJudge "Passes computed facts" "" "Proposed"
-        jevJudge -> aiMlApi "POST /v1/decisions (Jev)" "HTTPS/JSON" "Proposed"
-        jevJudge -> insightWriter "Passes typed judgments" "" "Proposed"
-        insightWriter -> aiMlApi "POST chat completions (gpt-4o-mini)" "HTTPS/JSON" "Proposed"
+        insightFacts -> insightWriter "Passes computed facts" "" "Proposed"
+        insightWriter -> openAi "POST chat completions (gpt-4o-mini)" "HTTPS/JSON" "Proposed"
         insightWriter -> database "Upserts insights" "SQL" "Proposed"
 
         aws = deploymentEnvironment "AWS" {
@@ -120,7 +117,7 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
             deploymentNode "Amazon Web Services" "" "AWS" {
                 deploymentNode "us-east-1 (placeholder)" "" "AWS Region, should match Supabase" {
                     scheduler = infrastructureNode "EventBridge Scheduler" "Daily ingest after the last city's local midnight (~10:00 UTC). Separate Insight schedule." "Amazon EventBridge"
-                    ssm = infrastructureNode "SSM Parameter Store" "OpenWeather key, Supabase URL, AI/ML API key (SecureString)." "AWS SSM"
+                    ssm = infrastructureNode "SSM Parameter Store" "OpenWeather key, Supabase URL, OpenAI API key (SecureString)." "AWS SSM"
                     logs = infrastructureNode "CloudWatch" "Logs and failed-run alarm." "Amazon CloudWatch"
                     alerts = infrastructureNode "SNS Topic" "Failure and cost alerts to the team (Should)." "Amazon SNS"
                     budgets = infrastructureNode "AWS Budgets" "Monthly spend alarm." "AWS Budgets"
@@ -147,8 +144,8 @@ workspace "City Air Tracker" "Compares air quality across U.S. cities and Census
                 softwareSystemInstance openWeather ingestGroup
             }
 
-            deploymentNode "AI/ML API" "[Proposed]" "SaaS" "Proposed" {
-                softwareSystemInstance aiMlApi insightGroup "Proposed"
+            deploymentNode "OpenAI API" "[Proposed]" "SaaS" "Proposed" {
+                softwareSystemInstance openAi insightGroup "Proposed"
             }
 
             scheduler -> ingestInstance "Invokes daily"
