@@ -16,3 +16,6 @@ CREATE TABLE IF NOT EXISTS gold_air_quality (
   aqi_24h_avg NUMERIC NOT NULL,
   PRIMARY KEY (city, timestamp)
 );
+
+ALTER TABLE gold_air_quality
+ADD COLUMN aqi_24h_avg DOUBLE PRECISION;
