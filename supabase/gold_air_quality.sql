@@ -18,4 +18,4 @@ CREATE TABLE IF NOT EXISTS gold_air_quality (
 );
 
 ALTER TABLE gold_air_quality
-ADD COLUMN aqi_24h_avg DOUBLE PRECISION;
+ADD COLUMN IF NOT EXISTS aqi_24h_avg NUMERIC;
