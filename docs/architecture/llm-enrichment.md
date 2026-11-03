@@ -50,7 +50,11 @@ Plain-text files in the repo, next to the enrichment code (`services/pipeline/sr
 
 ### Writer prompt (`insight-v2`)
 
+<<<<<<< HEAD
 > You write exactly one plain-language sentence about one U.S. city's air quality for one day, for a general reader. You are given the city, the date, the 24-hour average AQI, and its category. Use only these facts. Do not add numbers, causes, places or dates that are not in the input. Do not compare with other days. Do not give health advice, predict air quality, or tell people what to do. Reply only as JSON: {"insight_text": "..."}.
+=======
+> You write exactly one plain-language sentence about one U.S. city’s air quality for one month, for a general reader. Use only the facts given. Do not add numbers, causes, places or dates that are not in the input. Do not compare with other months or years. Do not give health advice, predict air quality, or tell people what to do. Reply as JSON: {"insight_text": "..."}.
+>>>>>>> 8ba38e8f2b0956ada0e5eba6b17d49fa8c2c317a
 
 ### Health-advice blocklist
 
