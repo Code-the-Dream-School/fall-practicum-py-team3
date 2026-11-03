@@ -1,55 +1,56 @@
 # LLM Enrichment contract
 
-## Unit of work: One Insight per city for the month
+## Unit of work: One Insight per city per day
 
-# Which months get enriched, which are skipped
+# Which days get enriched, which are skipped
 
-A Tracked City month is enriched only when all are true:
+A Tracked City day is enriched only when all are true:
 
-| Rule                                      | Otherwise                   |
-| ----------------------------------------- | --------------------------- |
-| The month has ended (UTC)                 | skipped, `incomplete_month` |
-| Gold rows cover at least 75% of its hours | skipped, `low_coverage`     |
-| It has no row yet with status `enriched`  | not sent (already done)     |
+| Rule                                                 | Otherwise                 |
+| ---------------------------------------------------- | ------------------------- |
+| The day has ended (UTC)                              | skipped, `incomplete_day` |
+| Gold rows cover at least 75% of its hours (18 of 24) | skipped, `low_coverage`   |
+| It has no row yet with status `enriched`             | not sent (already done)   |
 
-Why 75%: gold never fills or estimates missing hours, so a month with thin data would describe a few days as a whole month.
+Why 75%: gold never fills or estimates missing hours, so a day with thin data would describe a few hours as a whole day.
 
 ## Facts Python computes (model input)
 
-| Fact                                     | Why the writer needs it                                                               |     |
-| ---------------------------------------- | ------------------------------------------------------------------------------------- | --- |
-| Hours covered, coverage %                | Lets the writer avoid overclaiming on a month with gaps; audit trail for the 75% rule |
-| Mean of each of the 8 pollutants (µg/m³) | What the air was made of                                                              |
-| Worst AQI Level in the month             | Gives the month's peak, which a mean hides                                            |
-| Share of hours at each AQI Level         | Says how often the air was bad, not just how bad it got once                          |     |
+| Fact                                | Why the writer needs it                                      |
+| ----------------------------------- | ------------------------------------------------------------ |
+| 24-hour average AQI (`aqi_24h_avg`) | The day's level, smoothed so one bad hour does not decide it |
+| AQI category of that average        | The label (Good, Fair, Moderate, Poor, Very Poor)            |
+
+The category comes from `aqi_category()` applied to `aqi_24h_avg`, not to a single hourly score.
 
 # Fields added
 
-One row per (Tracked City, month). 1 enriched row = 30 days of hourly data
+One row per (Tracked City, date). 1 enriched row = 1 day of hourly data.
 
 ### Insight table
 
-| Field            | Type           | Allowed values                                                                                                   |
-| ---------------- | -------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `insight_text`   | text, nullable | 1–2 English sentences, non-empty, ≤ 300 characters, passes the health-advice blocklist; `null` unless `enriched` |
-| `insight_source` | text, nullable | `llm` (written by the model) or `template` (fallback); `null` unless `enriched`                                  |
+| Field            | Type           | Allowed values                                                                                                |
+| ---------------- | -------------- | ------------------------------------------------------------------------------------------------------------- |
+| `insight_text`   | text, nullable | 1 English sentence, non-empty, ≤ 300 characters, passes the health-advice blocklist; `null` unless `enriched` |
+| `insight_source` | text, nullable | `llm` (written by the model) or `template` (fallback); `null` unless `enriched`                               |
 
 ### Run metadata
 
-| Field         | Type           | Allowed values                     |
-| ------------- | -------------- | ---------------------------------- |
-| `status`      | text           | `enriched`, `skipped`, `failed`    |
-| `skip_reason` | text, nullable | `incomplete_month`, `low_coverage` |
+| Field           | Type           | Allowed values                   |
+| --------------- | -------------- | -------------------------------- |
+| `status`        | text           | `enriched`, `skipped`, `failed`  |
+| `skip_reason`   | text, nullable | `incomplete_day`, `low_coverage` |
+| `error_message` | text, nullable | set only when `failed`           |
 
-Table name and DDL are settled in the coding ticket (the architecture model currently calls it `insights`).
+Primary key is `(city, date)`. Table name and DDL are settled in the coding ticket (the architecture model currently calls it `insights`).
 
 ## Prompts and where they live
 
-Plain-text files in the repo, next to the enrichment code (`services/pipeline/src/pipeline/enrich/prompts/`), reviewed in PRs like code. Not in the database or environment variables. One version string (`insight-v1`) covers the writer prompt, the blocklist and the template; bump it on any wording change.
+Plain-text files in the repo, next to the enrichment code (`services/pipeline/src/pipeline/enrich/prompts/`), reviewed in PRs like code. Not in the database or environment variables. One version string (`insight-v2`) covers the writer prompt, the blocklist and the template; bump it on any wording change.
 
-### Writer prompt (`insight-v1`)
+### Writer prompt (`insight-v2`)
 
-> You write one or two plain-language sentences about one U.S. city’s air quality for one month, for a general reader. Use only the facts given. Do not add numbers, causes, places or dates that are not in the input. Do not compare with other months or years. Do not give health advice, predict air quality, or tell people what to do. Reply as JSON: {"insight_text": "..."}.
+> You write exactly one plain-language sentence about one U.S. city's air quality for one day, for a general reader. You are given the city, the date, the 24-hour average AQI, and its category. Use only these facts. Do not add numbers, causes, places or dates that are not in the input. Do not compare with other days. Do not give health advice, predict air quality, or tell people what to do. Reply only as JSON: {"insight_text": "..."}.
 
 ### Health-advice blocklist
 
@@ -57,17 +58,17 @@ Rejects text containing terms such as: mask, indoors, outdoors, asthma, symptoms
 
 # Template fallback
 
-`{City}'s air in {Month YYYY} peaked at {worst AQI label}, with {x}% of hours Fair or worse and a mean PM2.5 of {y} µg/m³.`
+`{City}'s air quality on {Date} was {category}, with a 24-hour average AQI of {x}.`
 
-Example: "Denver's air in March 2024 peaked at Moderate, with 38% of hours Fair or worse and a mean PM2.5 of 9.4 µg/m³."
+Example: "Denver's air quality on 2024-03-14 was Moderate, with a 24-hour average AQI of 3.0."
 
 ## When the model returns something unusable
 
-| What happens                                      | Result                                                                             |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Network error, 429 or 5xx                         | Retry up to 3 times with backoff, then `failed` with the error; retried next run   |
-| 400 or refusal                                    | Template writes the Insight; `insight_source = template`; month is `enriched`      |
-| Empty, malformed JSON, too long, or blocklist hit | Template writes the Insight; `insight_source = template`; month is `enriched`      |
-| Any failure                                       | Never stops the batch. The Pipeline Run counts enriched, skipped and failed months |
+| What happens                                      | Result                                                                           |
+| ------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Network error, 429 or 5xx                         | Retry up to 3 times with backoff, then `failed` with the error; retried next run |
+| 400 or refusal                                    | Template writes the Insight; `insight_source = template`; day is `enriched`      |
+| Empty, malformed JSON, too long, or blocklist hit | Template writes the Insight; `insight_source = template`; day is `enriched`      |
+| Any failure                                       | Never stops the batch. The Pipeline Run counts enriched, skipped and failed days |
 
-Transient errors leave the month `failed` rather than storing template text, so an OpenAI outage does not permanently replace Insights with the fallback.
+Transient errors leave the day `failed` rather than storing template text, so an OpenAI outage does not permanently replace Insights with the fallback.
