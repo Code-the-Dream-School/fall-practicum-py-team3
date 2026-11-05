@@ -80,3 +80,24 @@ def test_no_duplicate_enrichment(monkeypatch):
     second_result = enrichment.enrich_record(first_result)
     
     assert len(calls) == 1
+    
+# ============================================
+# TEST 4: handle llm failure
+    def fake_call_llm(record):
+        def fake_call_llm(record):
+            raise Exception("LLM request failed")
+        
+        monkeypatch.setattr(enrichment, "call_llm", fake_call_llm)
+        
+        record = {
+            "city": "Boston",
+            "timestamp": "2026-11-05",
+            "aqi_24h_avg": 2.5,
+            "enriched_at": None,
+        }
+        
+        result = enrichment.enrich_record(record)
+        
+        assert result["enriched_at"] is None
+        assert result["enrichment_error"] == "LLM request failed"
+        
