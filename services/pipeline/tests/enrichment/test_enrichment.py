@@ -18,7 +18,7 @@ def test_enrich_record_with_mock_llm(monkeypatch):
     # fake llm response
     def fake_call_llm(record):
         return {
-            "insight_text": "Air quality was moderate today."
+            "insight_text": "Air quality in Boston was moderate."
         }
         
     # replace real llm call with fake
@@ -31,7 +31,7 @@ def test_enrich_record_with_mock_llm(monkeypatch):
 
     result = enrichment.enrich_record(record)
     
-    assert result["insight_text"] == "Air quality was moderate today."
+    assert result["insight_text"] == "Air quality in Boston was moderate."
     
 # ============================================
 # TEST 2: skipped records
@@ -56,3 +56,27 @@ def test_skip_already_enriched_record(monkeypatch):
     
     # llm should not be called for an already enriched record
     assert calls == []
+    
+# ============================================
+# TEST 3: idempotency
+@requires_enrichment
+def test_no_duplicate_enrichment(monkeypatch):
+    calls = []
+    
+    def fake_call_llm(record):
+        calls.append(record)
+        return {"insight_text": "Air quality in Boston was moderate on November 5th."}
+    
+    monkeypatch.setattr(enrichment, "call_llm", fake_call_llm)
+    
+    record = {
+        "city": "Boston",
+        "timestamp": "2026-11-05",
+        "aqi_24h_avg": 2.5,
+        "enriched_at": None,
+    }
+
+    first_result = enrichment.enrich_record(record)
+    second_result = enrichment.enrich_record(first_result)
+    
+    assert len(calls) == 1
