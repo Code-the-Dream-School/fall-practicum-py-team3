@@ -101,3 +101,11 @@ def test_no_duplicate_enrichment(monkeypatch):
         assert result["enriched_at"] is None
         assert result["enrichment_error"] == "LLM request failed"
         
+# ============================================
+# TEST 5: handle empty input
+
+@requires_enrichment
+def test_empty_records():
+    result = enrichment.enrich_records([])
+    
+    assert result == []
