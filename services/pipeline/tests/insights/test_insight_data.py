@@ -118,13 +118,19 @@ def test_row_with_empty_insight_text_counts_as_unenriched():
     assert len(get_unenriched_gold(client)) == 1
 
 
-def test_insight_inputs_keep_nulls():
-    row = make_gold_row("Boston", "2024-01-01", pm2_5=None, extra_column="ignored")
+def test_insight_inputs_only_include_agreed_fields():
+    row = make_gold_row("Boston", "2024-01-01", extra_column="ignored")
     inputs = select_insight_inputs(row)
-    assert inputs["pm2_5"] is None
-    assert "extra_column" not in inputs
+    assert set(inputs) == {"city", "timestamp", "category", "aqi_24h_avg"}
     assert inputs["city"] == "Boston"
+    assert inputs["aqi_24h_avg"] == 2.0
 
+
+def test_insight_inputs_keep_nulls():
+    row = make_gold_row("Boston", "2024-01-01", category=None, aqi_24h_avg=None)
+    inputs = select_insight_inputs(row)
+    assert inputs["category"] is None
+    assert inputs["aqi_24h_avg"] is None
 
 def test_database_error_is_raised():
     client = InMemoryClient({}, error=RuntimeError("db down"))

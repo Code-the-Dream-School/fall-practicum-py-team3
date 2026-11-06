@@ -3,10 +3,7 @@
 PAGE_SIZE = 1000 
 
 # Fields sent to the LLM prompt.
-INSIGHT_FIELDS = (
-    "city", "timestamp", "category", "aqi", "aqi_24h_avg",
-    "pm2_5", "pm10", "o3", "no2", "so2", "co", "score",
-)
+INSIGHT_FIELDS = ("city", "timestamp", "category", "aqi_24h_avg")
 
 
 def _apply_filters(query, city, start, end):
