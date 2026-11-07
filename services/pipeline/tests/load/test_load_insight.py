@@ -60,4 +60,24 @@ def test_skips_days_with_less_than_18_hours(monkeypatch):
     assert fake_supabase.batches == []
     
 # ==============================================
-# TEST 3: latest record
+# TEST 3: latest record and aqi as integer
+def test_uses_latest_record(monkeypatch):
+    fake_supabase = FakeSupabase()
+    records = make_records(18)
+    
+    records[-1]["category"] = "Very Poor"
+    records[-1]["aqi_24h_avg"] = 4.6
+    
+    monkeypatch.setattr(load_module, "supabase", fake_supabase)
+    monkeypatch.setattr(
+        load_module, "get_gold_records", lambda client: records
+    )
+    
+    load_module.load_insight()
+    
+    loaded_record = fake_supabase.batches[0][0]
+    
+    assert loaded_record["timestamp"] == records[-1]["timestamp"]
+    assert loaded_record["category"] == "Very Poor"
+    assert loaded_record["aqi_24h_avg"] == 5
+    
