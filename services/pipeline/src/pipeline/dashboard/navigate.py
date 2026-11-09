@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd     # Used to work with tabular data
-from forecast import daily_forecast as daily
+from daily import daily_summary as daily
 from charts import measure_pollutants as mp, raw_gold_comparison as comp
 
 # Either do pandas df here or create one function that can be used for multiple files!
