@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd     # Used to work with tabular data
-from pathlib import Path
 from forecast import daily_forecast as daily
 from charts import measure_pollutants as mp, raw_gold_comparison as comp
 
