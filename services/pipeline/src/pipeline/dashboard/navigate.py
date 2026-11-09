@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd     # Used to work with tabular data
 import numpy as np      # Helps generate random numbers
 import plotly.express as px  # For interactive charts
+from forecast import daily_forecast as daily
 
 # sample data for demo
 np.random.seed(42) # setting a seed so results are consistent for each run
@@ -21,18 +22,7 @@ def show_city():
 # Daily will use aqi_24h_avg in the final version --> df["aqi_24h_avg"]
 # Move to a new file (forecast.py)
 def show_daily():
-    days = ['Mon', 'Tue', 'Wed', 'Th', 'Fri', 'Sat', 'Sun']
-
-    # Switch to python-lucide!
-    for day in days:
-        with st.container(border=True, horizontal=True):
-            st.markdown(day)
-            st.markdown("Icon")
-            st.markdown("%")
-            st.markdown("Condition")
-            st.markdown("Temp 1")
-            st.container(border=True)
-            st.markdown("Temp 2")
+    daily()
 
 # __________________________________________________________
 # This can be anything I want - something about the pollutants like the drop down menu
