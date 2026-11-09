@@ -28,18 +28,27 @@ if not supabase_key:
 supabase = create_client(supabase_url, supabase_key)
 
 # Load raw data to db
-def load_raw(ext):
+def load_raw(records):
     try:
-        # Records are unique by city and timestamp.
-        # Upsert updates existing records instead of creating duplicates.
-        response = (
-            supabase.table("raw_air_quality")
-            .upsert(ext, on_conflict="city,timestamp")
-            .execute()
-        )
+        batch_size = 2000
+        total = len(records)
+        for offset in range(0, total, batch_size): # starting indicies > each as offset
+            batch = records[offset : offset + batch_size] # list slicing > sublist
+            batch_number = offset // batch_size + 1 # integer division > +1 for ordinal
+            print(
+                f"Upserting batch {batch_number} "
+                f"({len(batch)} of {total} rows) into raw_air_quality"
+            )
+            
+            # Records are unique by city and timestamp.
+            # Upsert updates existing records instead of creating duplicates.
+            response = (
+                supabase.table("raw_air_quality")
+                .upsert(batch, on_conflict="city,timestamp")
+                .execute()
+            )
+            print(f"Upserted {len(response.data)} rows in batch {batch_number}")
 
-        print(f"Upserted {len(response.data)} rows into raw_air_quality")
-    
     except Exception as error:
         print(f"Failed to load raw air quality records: {error}.")
         raise
