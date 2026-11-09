@@ -132,7 +132,33 @@ def enrich_record(record):
     return result
 
 
+
 def enrich_records(records):
     # run enrich_record on every record in the list
     return [enrich_record(r) for r in records]
 
+
+
+def run_enrichment(client, batch_size=500):
+ 
+    rows = (
+        client.table("daily_insight")
+        .select("*")
+        .is_("enriched_at", "null") #idempotency.
+        .execute()
+        .data
+    )
+
+    if not rows:
+        print("Nothing to enrich.")
+        return []
+    results = enrich_records(rows)
+
+    # write back in batches
+    for start in range(0, len(results), batch_size):
+        batch = results[start:start + batch_size]
+        client.table("daily_insight").upsert(batch, on_conflict="city,timestamp").execute()
+
+    failed = [r for r in results if r.get("enrichment_error")]
+    print(f"Enriched {len(results) - len(failed)}, failed {len(failed)}.")
+    return results
