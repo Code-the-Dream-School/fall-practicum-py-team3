@@ -59,3 +59,57 @@ def show_chart():
     st.markdown("Colored by pollutants")
     bar_chart_raw = px.bar(df,x="Raw", y="Gold", barmode='group', color="Pollutants")
     st.plotly_chart(bar_chart_raw)
+    
+def show_chart():
+    st.title("Pollutant Comparisons Charts")
+
+    st.subheader("Pollutants vs Raw")
+    st.markdown("Colored by Gold")
+    bar_chart_raw = px.bar(df,x="Pollutants", y="Raw", barmode='group', color="Gold")
+    st.plotly_chart(bar_chart_raw)
+
+    st.subheader("Raw vs Gold")
+    st.markdown("Colored by pollutants")
+    bar_chart_raw = px.bar(df,x="Raw", y="Gold", barmode='group', color="Pollutants")
+    st.plotly_chart(bar_chart_raw)
+    
+def center_nav():
+    container = st.container(border=True)
+        
+    with container:
+        left, center, right = st.columns([1,2,1])
+        
+        # options menu
+        with center:
+            options = ["City", "Daily", "Air Quality", "Chart"]
+            selection = st.segmented_control(
+                "Weather", options, label_visibility="collapsed"
+            )
+            if not selection:
+                        st.markdown("Please select an option.", text_alignment="center")
+                        
+              # Account button
+        with right:
+            # st.space("small")
+            account = st.button("Log in")  
+            if account: 
+                st.write(account)
+                
+        with left:
+            left_container = st.container(border=True)
+            with left_container:
+                poll_list = ['CO', 'NO', 'NO2', 'O3', 'SO2', 'NH3', 'PM2.5', 'PM10']
+                st.selectbox("View pollutants", options=poll_list)
+
+                # can add facts for each pollutants
+                
+    # Dictionary
+    air_nav = {
+        "City": show_city,
+        "Daily": show_daily,
+        "Air Quality": show_air_quality,
+        "Chart": show_chart
+    }
+    
+    if selection:
+        air_nav[selection]()
