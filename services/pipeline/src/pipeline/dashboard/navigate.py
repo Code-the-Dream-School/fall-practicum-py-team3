@@ -1,5 +1,6 @@
 import streamlit as st
-# import pandas as pd     # Used to work with tabular data
+import pandas as pd     # Used to work with tabular data
+from pathlib import Path
 from forecast import daily_forecast as daily
 from charts import measure_pollutants as mp, raw_gold_comparison as comp
 
@@ -11,18 +12,19 @@ def show_city():
 
 def show_daily():
     daily()
-
-# __________________________________________________________
-# This can be anything I want - something about the pollutants like the drop down menu
-# Move to a new file eventually  
-          
+       
 def show_air_quality():
-    st.markdown("Air quality", text_alignment="center")
     with st.container(border=True):
-        poll_list = ['CO', 'NO', 'NO2', 'O3', 'SO2', 'NH3', 'PM2.5', 'PM10']
-        st.selectbox("View pollutants", options=poll_list)
-
-        # can add facts for each pollutants
+        details = pd.read_csv("pollutants.csv").set_index("name",drop=False)
+        select = st.selectbox("View pollutants", details["name"], index=None)
+        
+        if select in details.index:
+            st.markdown("<u>Fact:</u>",unsafe_allow_html=True)
+            st.write(details.loc[select,"what_it_does"])
+            st.markdown("<u>Impact:</u>",unsafe_allow_html=True)
+            st.write(details.loc[select,"air_pollution_impact"])
+        else:
+            st.info("Details haven’t been added for this option yet.")
 
 def show_chart():
     mp()
