@@ -9,8 +9,6 @@ def show_city():
     # extract city name using df["city"]
     st.markdown("City name", text_alignment="center")
 
-# Daily will use aqi_24h_avg in the final version --> df["aqi_24h_avg"]
-# Move to a new file (forecast.py)
 def show_daily():
     daily()
 
@@ -20,7 +18,11 @@ def show_daily():
           
 def show_air_quality():
     st.markdown("Air quality", text_alignment="center")
-    
+    with st.container(border=True):
+        poll_list = ['CO', 'NO', 'NO2', 'O3', 'SO2', 'NH3', 'PM2.5', 'PM10']
+        st.selectbox("View pollutants", options=poll_list)
+
+        # can add facts for each pollutants
 
 def show_chart():
     mp()
@@ -34,34 +36,25 @@ def center_nav():
         
         # options menu
         with center:
-            options = ["City", "Daily", "Air Quality", "Chart"]
+            options = ["City", "Daily", "Air Quality", "Charts"]
             selection = st.segmented_control(
                 "Weather", options, label_visibility="collapsed"
             )
             if not selection:
                         st.markdown("Please select an option.", text_alignment="center")
                         
-              # Account button
+        # Account button
         with right:
-            # st.space("small")
             account = st.button("Log in")  
             if account: 
                 st.write(account)
-                
-        with left:
-            left_container = st.container(border=True)
-            with left_container:
-                poll_list = ['CO', 'NO', 'NO2', 'O3', 'SO2', 'NH3', 'PM2.5', 'PM10']
-                st.selectbox("View pollutants", options=poll_list)
-
-                # can add facts for each pollutants
                 
     # Dictionary
     air_nav = {
         "City": show_city,
         "Daily": show_daily,
         "Air Quality": show_air_quality,
-        "Chart": show_chart
+        "Charts": show_chart
     }
     
     if selection:

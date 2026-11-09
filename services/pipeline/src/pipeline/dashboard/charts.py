@@ -1,7 +1,7 @@
 import streamlit as st
-import pandas as pd     # Used to work with tabular data
-import numpy as np      # Helps generate random numbers
-import plotly.express as px  # For interactive charts
+import pandas as pd     
+import numpy as np      
+import plotly.express as px  
 
 # import loading file & do df = load_data()
 # sample data for demo
