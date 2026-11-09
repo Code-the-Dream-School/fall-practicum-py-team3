@@ -15,13 +15,15 @@ sample_data = {
 df = pd.DataFrame(sample_data)
 
 def show_city():
+    # extract city name using df["city"]
     st.markdown("City name", text_alignment="center")
 
-# Daily will use aqi_24h_avg in the final version
+# Daily will use aqi_24h_avg in the final version --> df["aqi_24h_avg"]
 # Move to a new file (forecast.py)
 def show_daily():
     days = ['Mon', 'Tue', 'Wed', 'Th', 'Fri', 'Sat', 'Sun']
 
+    # Switch to python-lucide!
     for day in days:
         with st.container(border=True, horizontal=True):
             st.markdown(day)
@@ -32,12 +34,14 @@ def show_daily():
             st.container(border=True)
             st.markdown("Temp 2")
 
+# __________________________________________________________
 # This can be anything I want - something about the pollutants like the drop down menu
 # Move to a new file eventually  
           
 def show_air_quality():
     st.markdown("Air quality", text_alignment="center")
     
+# __________________________________________________________
 # Move to charts.py -- function for each chart type? Examples: def show_raw_chart(df):
     # Raw pollutant measurements
 
