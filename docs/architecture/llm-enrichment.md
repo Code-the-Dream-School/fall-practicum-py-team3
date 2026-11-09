@@ -46,11 +46,11 @@ Primary key is `(city, date)`. Table name and DDL are settled in the coding tick
 
 ## Prompts and where they live
 
-Plain-text files in the repo, next to the enrichment code (`services/pipeline/src/pipeline/enrich/prompts/`), reviewed in PRs like code. Not in the database or environment variables. One version string (`insight-v2`) covers the writer prompt, the blocklist and the template; bump it on any wording change.
+Plain-text files in the repo, next to the enrichment code (`services/pipeline/src/pipeline/enrich/prompts/`), reviewed in PRs like code. Not in the database or environment variables. One version string (`insight-v3`) covers the writer prompt, the blocklist and the template; bump it on any wording change.
 
-### Writer prompt (`insight-v2`)
+### Writer prompt (`insight-v3`)
 
-> You write exactly one plain-language sentence about one U.S. city's air quality for one day, for a general reader. You are given the city, the date, the 24-hour average AQI, and its category. Use only these facts. Do not add numbers, causes, places or dates that are not in the input. Do not compare with other days. Do not give health advice, predict air quality, or tell people what to do. Reply only as JSON: {"insight_text": "..."}.
+> You write exactly one plain-language sentence about one U.S. city's air quality for one day, for a general reader. You are given the city, the date, the 24-hour average AQI, and its category. Use only these facts. Do not add numbers, causes, places or dates that are not in the input. Do not compare with other days. Do not give health advice, predict air quality, or tell people what to do. The prompt includes a few-shot example to show the required sentence style and the required JSON response shape. Reply only as JSON: {"insight_text": "..."}.
 
 ### Health-advice blocklist
 
