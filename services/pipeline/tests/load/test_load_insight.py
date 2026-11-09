@@ -25,7 +25,7 @@ def make_records(hours, date="2026-10-15"):
             "city": "Boston",
             "timestamp": f"{date}T{hour:02d}:00:00+00:00",
             "category": "Moderate",
-            "aqi_24_avg": 3,
+            "aqi_24h_avg": 3,
         })
         
     return records
