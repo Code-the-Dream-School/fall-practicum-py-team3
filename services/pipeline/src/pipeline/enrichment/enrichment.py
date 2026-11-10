@@ -39,7 +39,7 @@ def is_usable_insight(text):
 
 
 #LLM stuff
-PROMPT_VERSION = "insight-v3"
+PROMPT_VERSION = "insight-v1"
 MODEL = "gpt-4o-mini"
 
 WRITER_PROMPT = (
