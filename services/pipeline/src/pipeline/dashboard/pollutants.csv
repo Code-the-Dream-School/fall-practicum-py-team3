@@ -1,0 +1,9 @@
+api_key,name,what_it_does,air_pollution_impact
+co,Carbon monoxide (CO),"When inhaled, it reduces the amount of oxygen the blood can carry.","Incomplete burning of fuel releases CO. In sunlight, it can participate in reactions that produce ground-level ozone."
+no,Nitrogen monoxide (NO),It reacts with ozone in the air to form nitrogen dioxide.,Engines and other high-temperature combustion sources release NO. Its conversion to nitrogen dioxide feeds the chemistry that produces smog.
+no2,Nitrogen dioxide (NO₂),It irritates the airways and can worsen asthma symptoms.,Sunlight breaks down NO₂ in a reaction that leads to ozone formation. Other reactions produce nitrate particles that add to fine particle pollution.
+o3,Ground-level ozone (O₃),It irritates the lungs and can damage plant leaves.,It forms when nitrogen oxides and volatile organic compounds react in sunlight. It is a major component of smog.
+so2,Sulfur dioxide (SO₂),"It can narrow the airways and make breathing difficult, especially for people with asthma.",Burning sulfur-containing fuels releases SO₂. In the atmosphere it can form sulfate particles and contribute to acid rain.
+pm2_5,Fine particulate matter (PM₂.₅),Particles up to 2.5 micrometers across can reach deep into the lungs. Exposure can harm the heart and lungs.,"Smoke and soot add fine particles directly. Reactions between gases also create fine particles, which can build up and reduce visibility."
+pm10,Inhalable particulate matter (PM₁₀),Particles up to 10 micrometers across can enter the respiratory tract and aggravate breathing problems.,"Road dust, construction, and windblown soil add inhalable particles to the air. PM₁₀ includes the smaller PM₂.₅ particles as well."
+nh3,Ammonia (NH₃),"At high concentrations, this gas irritates the eyes, nose, and throat.",Ammonia released from manure and fertilizers reacts with acids in the air to form fine particles such as ammonium nitrate and ammonium sulfate.
