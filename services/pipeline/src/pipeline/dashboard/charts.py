@@ -14,7 +14,6 @@ sample_data = {
 }
 
 df = pd.DataFrame(sample_data)
-st.title("Pollutant Comparisons Charts")
 
 def measure_pollutants():
     st.subheader("Pollutants Measurements")

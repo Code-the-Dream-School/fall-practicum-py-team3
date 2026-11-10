@@ -18,9 +18,11 @@ def insight_to_dashboard():
     df = pd.DataFrame(data)
    
     daily_df = df["aqi_24h_avg"]
-    city_df = df["city"]
+    city = df["city"]
+    date_df = pd.to_datetime(df["date"], utc=True).dt.strftime("%B %d")
+    category = df["category"]
     
-    return daily_df, city_df
+    return daily_df, city, date_df, category
 
 if __name__ == "__main__":
     insight_to_dashboard()
