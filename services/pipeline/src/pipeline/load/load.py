@@ -4,6 +4,7 @@ from dotenv import dotenv_values
 from supabase import create_client
 import data_contracts.schemas as schemas
 from pipeline.extract.extract import extract as ext, City, CITIES
+from pipeline.run_tracking import start_run, finish_run, fail_run
 
 # Find the directory containing setup_env.py
 # Navigate to the project root
@@ -35,26 +36,53 @@ def load_raw(ext):
         response = (
             supabase.table("raw_air_quality")
             .upsert(ext, on_conflict="city,timestamp")
+            .select()
             .execute()
         )
 
         print(f"Upserted {len(response.data)} rows into raw_air_quality")
+        return len(response.data)
     
     except Exception as error:
         print(f"Failed to load raw air quality records: {error}.")
         raise
 
-if __name__ == "__main__":
+def main():
+    run_id = start_run()
+    rows_loaded = 0
     
-    for name, coords in CITIES.items():
-        city = City(
-            LAT=coords["LAT"],
-            LON=coords["LON"],
-            START=1761350400, 
-            END=1792886400
-        )
+    try:
+        for name, coords in CITIES.items():
+            city = City(
+                LAT=coords["LAT"],
+                LON=coords["LON"],
+                START=1761350400, 
+                END=1792886400
+            )
 
-        extraction = ext(city)
-        records = extraction.to_raw_schema(name)
-        print(f"{name} records: {len(records)}")
-        load_raw(records)
+            extraction = ext(city)
+            records = extraction.to_raw_schema(name)
+            
+            print(f"{name} records: {len(records)}")
+            
+            rows_loaded += load_raw(records)
+            
+        finish_run(
+            run_id,
+            rows_extracted=0,
+            rows_transformed=0,
+            rows_loaded=rows_loaded,
+        )
+        
+        print("Raw loading completed successfully.")
+        
+    except Exception as error:
+        fail_run(
+            run_id,
+            error,
+            rows_loaded=rows_loaded,
+        )
+        raise
+    
+if __name__ == "__main__":
+    main()
