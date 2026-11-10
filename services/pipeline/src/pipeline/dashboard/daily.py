@@ -2,7 +2,9 @@ import streamlit as st
 
 # Daily will use aqi_24h_avg in the final version --> df["aqi_24h_avg"]
 # Load in df from load_data()
+
 def daily_summary():
+    # Add city info here!
     days = ['Mon', 'Tue', 'Wed', 'Th', 'Fri', 'Sat', 'Sun']
 
     # Switch to python-lucide!

@@ -5,10 +5,6 @@ from charts import measure_pollutants as mp, raw_gold_comparison as comp
 
 # Either do pandas df here or create one function that can be used for multiple files!
 
-def show_city():
-    # extract city name using df["city"]
-    st.markdown("City name", text_alignment="center")
-
 def show_daily():
     daily()
        
@@ -37,7 +33,7 @@ def center_nav():
         
         # options menu
         with center:
-            options = ["City", "Daily", "Air Quality", "Charts"]
+            options = ["Daily", "Air Quality", "Charts"]
             selection = st.segmented_control(
                 "Weather", options, label_visibility="collapsed"
             )
@@ -52,7 +48,6 @@ def center_nav():
                 
     # Dictionary
     air_nav = {
-        "City": show_city,
         "Daily": show_daily,
         "Air Quality": show_air_quality,
         "Charts": show_chart
