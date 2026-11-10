@@ -5,7 +5,8 @@ from datetime import datetime, timezone
 
 from openai import OpenAI
 
-
+from dotenv import load_dotenv
+load_dotenv()
 
 def fallback_template(record):  
     category = aqi_category(round(record["aqi_24h_avg"]))
@@ -39,7 +40,7 @@ def is_usable_insight(text):
 
 
 #LLM stuff
-PROMPT_VERSION = "insight-v3"
+PROMPT_VERSION = "insight-v1"
 MODEL = "gpt-4o-mini"
 
 WRITER_PROMPT = (
@@ -78,7 +79,6 @@ FEW_SHOT_EXAMPLES = [
 
 def call_llm(record):
     client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-
     facts = {
         "city": record["city"],
         "date": str(record["timestamp"])[:10],
@@ -87,7 +87,7 @@ def call_llm(record):
     }
 
     messages = [{"role": "system", "content": WRITER_PROMPT}]
-
+    
     for example_facts, example_text in FEW_SHOT_EXAMPLES:
         messages.append({"role": "user", "content": json.dumps(example_facts)})
         messages.append({"role": "assistant", "content": json.dumps({"insight_text": example_text})})
@@ -103,12 +103,11 @@ def call_llm(record):
     return json.loads(response.choices[0].message.content)
 
 
-
 def enrich_record(record):
     if record.get("enriched_at"):
         return record
 
-    result = dict(record)  # work on a copy
+    result = dict(record) 
     try:
         data = call_llm(record)
         text = data.get("insight_text")
@@ -116,7 +115,7 @@ def enrich_record(record):
         if is_usable_insight(text):
             result["insight_source"] = "llm"
             result["model"] = MODEL
-        else:                                      # use the template sentence instead    
+        else:           
             text = fallback_template(record)
             result["insight_source"] = "template"
             result["model"] = None
@@ -124,8 +123,8 @@ def enrich_record(record):
         result["insight_text"] = text
         result["prompt_version"] = PROMPT_VERSION
         result["enriched_at"] = datetime.now(timezone.utc).isoformat()
+        result["enrichment_error"] = None    #clear any previous error if enrichment succeeds
     except Exception as e:
-        # LLM fails leave it un-enriched and save the reason
         result["enriched_at"] = None
         result["enrichment_error"] = str(e)
 
@@ -138,27 +137,28 @@ def enrich_records(records):
     return [enrich_record(r) for r in records]
 
 
-
-def run_enrichment(client, batch_size=500):
- 
-    rows = (
+def run_enrichment(client, batch_size=25, limit=None):
+    # read only rows that haven't been enriched yet (this is what makes reruns safe)
+    query = (
         client.table("daily_insight")
         .select("*")
-        .is_("enriched_at", "null") #idempotency.
-        .execute()
-        .data
+        .is_("enriched_at", "null")
     )
+    if limit:
+        query = query.limit(limit)  # small test runs
+    rows = query.execute().data
 
     if not rows:
         print("Nothing to enrich.")
         return []
-    results = enrich_records(rows)
 
-    # write back in batches
-    for start in range(0, len(results), batch_size):
-        batch = results[start:start + batch_size]
-        client.table("daily_insight").upsert(batch, on_conflict="city,timestamp").execute()
-
+    results = []
+    for start in range(0, len(rows), batch_size):
+        batch = rows[start:start + batch_size]
+        batch_results = enrich_records(batch)
+        results.extend(batch_results)
+        print(f"Enriched {len(results)} of {len(rows)}")
+        
     failed = [r for r in results if r.get("enrichment_error")]
     print(f"Enriched {len(results) - len(failed)}, failed {len(failed)}.")
     return results
