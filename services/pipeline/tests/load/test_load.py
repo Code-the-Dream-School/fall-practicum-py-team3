@@ -2,6 +2,7 @@
 from pathlib import Path
 import sys
 import pytest
+import importlib
 from pydantic import ValidationError
 
 # ---------------------------------------------------------------------------- #
@@ -24,18 +25,10 @@ from schemas import (
 )
 
 aqi_category = getattr(pipeline, "aqi_category", None)
-load = getattr(pipeline, "load", None)
 transform = getattr(pipeline, "transform", None)
 
-requires_load = pytest.mark.skipif(
-    not callable(load), reason="pipeline load function is not implemented"
-)
 requires_transform = pytest.mark.skipif(
     not callable(transform), reason="pipeline transform function is not implemented"
-)
-requires_load_transform = pytest.mark.skipif(
-    not callable(load) or not callable(transform),
-    reason="pipeline load/transform functions are not implemented",
 )
 requires_category = pytest.mark.skipif(
     not callable(aqi_category),
@@ -84,6 +77,56 @@ def raw_two_records():
     return make_raw([make_record(DT_1, aqi=2), make_record(DT_2, aqi=3, pm2_5=30.0)])
 
 
+@pytest.fixture
+def raw_loader(monkeypatch):
+    # mock database table with upsert behavior
+    class MemoryTable:
+        def __init__(self, client):
+            self.client = client
+            self.batch = []
+            self.conflict_columns = None
+
+        def upsert(self, batch, on_conflict):
+            self.batch = batch
+            self.conflict_columns = on_conflict
+            self.client.upsert_calls.append((batch, on_conflict))
+            return self
+
+        def execute(self):
+            for record in self.batch:
+                key = tuple(
+                    record[column] for column in self.conflict_columns.split(",")
+                )
+                self.client.records[key] = record
+            self.data = self.batch
+            return self
+
+    # mock Supabase client
+    class MemoryClient:
+        def __init__(self):
+            self.records = {}
+            self.upsert_calls = []
+
+        def table(self, name):
+            assert name == "raw_air_quality"
+            return MemoryTable(self)
+
+    client = MemoryClient()
+    import dotenv
+    import supabase
+
+    # use mock in place of dependencies
+    monkeypatch.setattr(
+        dotenv,
+        "dotenv_values",
+        lambda _: {"SUPABASE_URL": "test", "SUPABASE_KEY": "test"},
+    )
+    monkeypatch.setattr(supabase, "create_client", lambda *_: client)
+    load_module = importlib.import_module("pipeline.load.load")
+    monkeypatch.setattr(load_module, "supabase", client)
+    return load_module.load_raw, client
+
+
 # ---------------------------------------------------------------------------- #
 # load / transform
 
@@ -114,54 +157,42 @@ def test_transform_output_contract(raw_two_records):
     assert second.pm2_5 == 30.0
 
 
-@requires_load_transform
-def test_load_stores_transformed_records(raw_two_records):
-    store: dict = {}
-    expected = transform(raw_two_records, CITY)
-    inserted = load(expected, store)
+def test_load_stores_raw_records(raw_two_records, raw_loader):
+    load_raw, client = raw_loader
+    expected = raw_two_records.to_raw_schema(CITY)
 
-    # 2 items > instances of GoldAirQuality
-    assert inserted == 2
-    assert len(store) == 2
-    assert all(isinstance(row, GoldAirQuality) for row in store.values())
+    load_raw(expected)
 
-    # sort by timestamp > check if identical
-    stored_rows = sorted(
-        (row.model_dump() for row in store.values()), key=lambda row: row["timestamp"]
-    )
-    expected_rows = sorted(
-        (row.model_dump() for row in expected), key=lambda row: row["timestamp"]
-    )
-    assert stored_rows == expected_rows
+    assert len(client.records) == 2
+    assert list(client.records.values()) == expected
+    assert client.upsert_calls[0][1] == "city,timestamp"
 
 
 # ---------------------------------------------------------------------------- #
 # idempotency
 
 
-@requires_load_transform
-def test_loading_same_raw_data_twice_creates_no_duplicates(raw_two_records):
-    store: dict = {}
+def test_loading_same_raw_data_twice_creates_no_duplicates(raw_two_records, raw_loader):
+    load_raw, client = raw_loader
+    records = raw_two_records.to_raw_schema(CITY)
 
-    first = load(transform(raw_two_records, CITY), store)
-    snapshot = dict(store)
-    second = load(transform(raw_two_records, CITY), store)
+    load_raw(records)
+    snapshot = dict(client.records)
+    load_raw(records)
 
-    assert first == 2
-    assert second == 0  # nothing new on second call
-    assert len(store) == 2
-    assert store == snapshot  # contents unchanged after second call
+    assert len(client.records) == 2
+    assert client.records == snapshot
+    assert len(client.upsert_calls) == 2
 
 
-@requires_load_transform
-def test_same_timestamp_for_different_cities_is_not_a_duplicate():
-    store: dict = {}
+def test_same_timestamp_for_different_cities_is_not_a_duplicate(raw_loader):
+    load_raw, client = raw_loader
     raw = make_raw([make_record()])
 
-    load(transform(raw, "Washington, DC"), store)
-    load(transform(raw, "Baltimore, MD"), store)
+    load_raw(raw.to_raw_schema("Washington, DC"))
+    load_raw(raw.to_raw_schema("Baltimore, MD"))
 
-    assert len(store) == 2
+    assert len(client.records) == 2
 
 
 # ---------------------------------------------------------------------------- #
@@ -174,12 +205,13 @@ def test_transform_empty_payload_returns_empty_list():
     assert transform(make_raw([]), CITY) == []
 
 
-@requires_load
-def test_load_empty_list_inserts_nothing():
+def test_load_empty_list_inserts_nothing(raw_loader):
     # handle passing empty list into load step
-    store: dict = {}
-    assert load([], store) == 0
-    assert store == {}
+    load_raw, client = raw_loader
+    load_raw([])
+
+    assert client.records == {}
+    assert client.upsert_calls == []
 
 
 # ---------------------------------------------------------------------------- #
@@ -257,14 +289,16 @@ def test_aqi_category_rejects_none():
 
 # transform record > 1 and  5 > score in Gold row should equal raw score at both ends
 @pytest.mark.parametrize("aqi", [1, 5])
-@requires_load_transform
+@requires_transform
 def test_transform_preserves_boundary_scores(aqi):
     (row,) = transform(make_raw([make_record(aqi=aqi)]), CITY)
     assert row.aqi == aqi
     assert aqi_category(row.aqi) == {1: "Good", 5: "Very Poor"}[aqi]
-    
+
+
 # ---------------------------------------------------------------------------- #
 # rolling aggregate
+
 
 @requires_transform
 def test_rolling_average_of_aqi():
@@ -297,8 +331,9 @@ def test_rolling_average_of_aqi():
     ])
     
     result = transform(raw)
-    
+
     assert [row.aqi_24h_avg for row in result] == [2.0, 3.0, 8 / 3]
+
 
 def db_row(timestamp, aqi, city=CITY):
     # One row shaped like raw_air_quality, with fixed pollutant values.
