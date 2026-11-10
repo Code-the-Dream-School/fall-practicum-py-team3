@@ -8,7 +8,8 @@ import time
 import sys
 from importlib import import_module
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[5] / "data_contracts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "data_contracts"))
+from pipeline.run_tracking import start_run, finish_run, fail_run
 
 _schemas = import_module("schemas")
 RawAirQuality = _schemas.RawAirQuality
@@ -229,12 +230,40 @@ def write_to_json(city_name, result):
     with open(raw_path(city_name), "w") as file:
         json.dump(result.model_dump(mode="json"), file)
 
+def main():
+    run_id = start_run()
+    rows_extracted = 0
+    
+    try:
+        for name, coordinates in CITIES.items():
+            if has_window(name):
+                print(f"{name}: already has the full window, skipping")
+                continue
         
+            result = extract_all_windows(name, coordinates)
+            write_to_json(name, result)
+        
+            count = len(result.payload.list)
+            rows_extracted += count
+        
+            print(f"{name}: {count} records saved")
+        
+        finish_run(
+            run_id,
+            rows_extracted=rows_extracted,
+            rows_transformed=0,
+            rows_loaded=0,
+        )
+        
+        print("Extraction completed successfully.")
+        
+    except Exception as error:
+        fail_run(
+            run_id,
+            error,
+            rows_extracted=rows_extracted,
+        )
+        raise
+    
 if __name__ == "__main__":
-    for name, coordinates in CITIES.items():
-        if has_window(name):
-            print(f"{name}: already has the full window, skipping")
-            continue
-        result = extract_all_windows(name, coordinates)
-        write_to_json(name, result)
-        print(f"{name}: {len(result.payload.list)} records saved")
+    main()
