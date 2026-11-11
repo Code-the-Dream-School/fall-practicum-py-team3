@@ -75,8 +75,9 @@ FEW_SHOT_EXAMPLES = [
 ]
 
 
-def call_llm(record):
-    client = OpenAI(api_key=settings.openai_api_key)
+def call_llm(record, client=None):
+    if client is None:
+        client = OpenAI(api_key=settings.openai_api_key)
     facts = {
         "city": record["city"],
         "date": str(record["timestamp"])[:10],

@@ -2,8 +2,14 @@ import requests
 from datetime import datetime, timezone
 from pydantic import BaseModel
 
-from pipeline.config import settings
+import yaml
+
+from pipeline.config import PROJECT_ROOT, settings
 import json
+
+from pipeline.log import get_logger
+
+logger = get_logger(__name__)
 import time 
 import sys
 from importlib import import_module
@@ -29,41 +35,15 @@ class City(BaseModel):
 # instantiate the City class
 # city = City(LAT=42.36,LON=-71.06,START=1760486400,END=1792108800)
 
-CITIES = {
-            "Boston": {"LAT": 42.36, "LON": -71.06},
-            "Providence": {"LAT": 41.83, "LON": -71.42},
-            "New York City": {"LAT": 40.71, "LON": -74.01},
-            "Philadelphia": {"LAT": 39.95, "LON": -75.17},
-            "Pittsburgh": {"LAT": 40.44, "LON": -80.00},
-            "Buffalo": {"LAT": 42.89, "LON": -78.88},
-            "Chicago": {"LAT": 41.88, "LON": -87.62},
-            "Detroit": {"LAT": 42.33, "LON": -83.05},
-            "Columbus": {"LAT": 39.96, "LON": -83.00},
-            "Milwaukee": {"LAT": 43.04, "LON": -87.91},
-            "Minneapolis": {"LAT": 44.98, "LON": -93.27},
-            "Kansas City": {"LAT": 39.10, "LON": -94.58},
-            "Omaha": {"LAT": 41.26, "LON": -95.94},
-            "Washington DC": {"LAT": 38.91, "LON": -77.04},
-            "Charlotte": {"LAT": 35.23, "LON": -80.84},
-            "Atlanta": {"LAT": 33.75, "LON": -84.39},
-            "Miami": {"LAT": 25.76, "LON": -80.19},
-            "Tampa": {"LAT": 27.95, "LON": -82.46},
-            "Birmingham": {"LAT": 33.54, "LON": -86.80},
-            "Memphis": {"LAT": 35.15, "LON": -90.05},
-            "Nashville": {"LAT": 36.16, "LON": -86.78},
-            "Houston": {"LAT": 29.76, "LON": -95.37},
-            "Dallas": {"LAT": 32.78, "LON": -96.80},
-            "Oklahoma City": {"LAT": 35.47, "LON": -97.52},
-            "El Paso": {"LAT": 31.76, "LON": -106.49},
-            "Phoenix": {"LAT": 33.45, "LON": -112.07},
-            "Salt Lake City": {"LAT": 40.76, "LON": -111.89},
-            "Denver": {"LAT": 39.74, "LON": -104.98},
-            "Missoula": {"LAT": 46.87, "LON": -113.99},
-            "Los Angeles": {"LAT": 34.05, "LON": -118.24},
-            "Seattle": {"LAT": 47.61, "LON": -122.33},
-            "Honolulu": {"LAT": 21.31, "LON": -157.86},
-            "Anchorage": {"LAT": 61.22, "LON": -149.90}
-        }
+def _load_cities():
+    path = PROJECT_ROOT / "config" / "cities.yaml"
+    data = yaml.safe_load(path.read_text())
+    return {
+        entry["name"]: {"LAT": entry["lat"], "LON": entry["lon"]}
+        for entry in data["cities"]
+    }
+
+CITIES = _load_cities()
 
 START = 1606435200
 END = 1792022400
@@ -127,7 +107,7 @@ def extract(city: City) -> RawAirQuality:
         if response.status_code == 200:
             # Return False if the data['list'] is empty
             if data['list'] == []:
-                print("No air pollution records found.")
+                logger.warning("No air pollution records found.")
 
             metadata = {
                 "source": "http://api.openweathermap.org/data/2.5/air_pollution/history",
@@ -195,7 +175,7 @@ def extract_all_windows(name, coords):
                 result = extract(city)
                 break
             except requests.exceptions.RequestException as err:
-                print(f"  {name} {win_start}-{win_end}: attempt {attempt} failed ({err})")
+                logger.warning("  %s %s-%s: attempt %s failed (%s)", name, win_start, win_end, attempt, err)
                 if attempt == RETRIES:
                     raise
                 time.sleep(5 * attempt)

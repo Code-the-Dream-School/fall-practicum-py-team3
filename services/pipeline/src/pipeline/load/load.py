@@ -1,5 +1,8 @@
-from pathlib import Path
 from supabase import create_client
+
+from pipeline.log import get_logger
+
+logger = get_logger(__name__)
 import data_contracts.schemas as schemas
 from pipeline.config import settings
 from pipeline.extract.extract import extract as ext, City, CITIES
@@ -23,10 +26,10 @@ def load_raw(ext):
             .execute()
         )
 
-        print(f"Upserted {len(response.data)} rows into raw_air_quality")
+        logger.info("Upserted %s rows into raw_air_quality", len(response.data))
     
     except Exception as error:
-        print(f"Failed to load raw air quality records: {error}.")
+        logger.exception("Failed to load raw air quality records: %s", error)
         raise
 
 if __name__ == "__main__":
