@@ -1,7 +1,8 @@
 import requests
 from datetime import datetime, timezone
-from dotenv import dotenv_values
 from pydantic import BaseModel
+
+from pipeline.config import settings
 import json
 import time 
 import sys
@@ -16,7 +17,7 @@ RequestParameters = _schemas.RequestParameters
 
 
 
-API_KEY: str = dotenv_values(".env").get("OPENWEATHER_API_KEY")
+
 
 # Pydantic for validating the latitude, longitude, start, and end
 class City(BaseModel):
@@ -108,8 +109,6 @@ def extract(city: City) -> RawAirQuality:
             del _POLLUTION_CACHE[cache_key]  # invalidate stale entry
     
     try:
-        # Assign .env variable
-        api = API_KEY
         # Fetch historical air pollution data
         response = requests.get(f"http://api.openweathermap.org/data/2.5/air_pollution/history",
             params={
@@ -117,7 +116,7 @@ def extract(city: City) -> RawAirQuality:
             "lon": city.LON,
             "start": city.START,
             "end": city.END,
-            "appid": api
+            "appid": settings.openweather_api_key
             }
         )
 
