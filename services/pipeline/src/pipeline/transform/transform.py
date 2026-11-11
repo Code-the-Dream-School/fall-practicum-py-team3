@@ -109,30 +109,21 @@ def _derive(frame):
 
     frame["category"] = frame["aqi"].map(AQI_LABELS)
 
-
-
     # Worst pollutant's position on OpenWeather's own scale: the whole number is
     # the level and the decimal shows progress through the band.
-
-
     # OpenWeather rounds concentrations before sending them, so a reading shown
-    # exactly on a cutoff band value may really sit on either side, and some hours report
-    # particles as 0. Keep the score inside the level OpenWeather assigned so
-    # score and aqi never disagree.
+    # exactly on a cutoff band value may really sit on either side, and some hours
+    # report particles as 0. Keep the score inside the level OpenWeather assigned
+    # so score and aqi never disagree.
 
     sub_indices = pd.DataFrame(
         {name: [_sub_index(value, edges) for value in frame[name]] for name, edges in BANDS.items()},
         index=frame.index,
     )
 
-
     score = sub_indices.max(axis=1).clip(lower=frame["aqi"], upper=frame["aqi"] + 0.99)
     frame["score"] = (score * 100).astype(int) / 100
     return frame
-
-    
-    # A value exactly on an edge stays in the lower level (ozone at 60 is Good),
-    # which is how OpenWeather assigns its own AQI.
 
 def _sub_index(value, edges):
     """Level plus progress through it, e.g. 2.25 = a quarter of the way through Fair."""
@@ -140,6 +131,8 @@ def _sub_index(value, edges):
     lower = edges[level - 1]
     if level < len(edges):
         upper = edges[level]
+        # A value exactly on an edge stays in the lower level (ozone at 60 is Good),
+        # which is how OpenWeather assigns its own AQI.
     else:
         # Very Poor has no upper edge; reuse the width of the Poor band.
         upper = lower + (lower - edges[level - 2])

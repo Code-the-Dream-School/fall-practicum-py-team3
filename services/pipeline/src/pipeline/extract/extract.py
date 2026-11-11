@@ -1,8 +1,7 @@
-import requests, pytest
+import requests
 from datetime import datetime, timezone
 from dotenv import dotenv_values
 from pydantic import BaseModel
-from unittest.mock import Mock, patch
 import json
 import time 
 import sys
