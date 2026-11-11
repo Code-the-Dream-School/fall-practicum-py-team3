@@ -30,6 +30,7 @@ jobs:
 
   pipeline-tests:
     name: Pipeline tests
+    needs: python-smoke-check
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
