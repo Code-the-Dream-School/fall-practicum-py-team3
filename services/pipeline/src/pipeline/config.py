@@ -12,7 +12,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[4]
 class Settings(BaseSettings):
     # Field names use snake_case; pydantic-settings matches them to the
     # UPPER_SNAKE_CASE keys in .env (e.g. openweather_api_key <- OPENWEATHER_API_KEY).
-    openweather_api_key: str
+    # All optional so importing this module (and running tests) works without a .env.
+    openweather_api_key: Optional[str] = None
     supabase_url: Optional[str] = None
     supabase_key: Optional[str] = None
     openai_api_key: Optional[str] = None
