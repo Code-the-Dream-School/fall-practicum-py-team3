@@ -1,10 +1,8 @@
-import os
 from datetime import datetime, timezone
 
-from dotenv import load_dotenv
 from supabase import create_client
 
-load_dotenv()
+from pipeline.config import settings
 
 _client = None
 
@@ -12,11 +10,7 @@ _client = None
 def _connect():
     global _client
     if _client is None:
-        url = os.environ.get("SUPABASE_URL")
-        key = os.environ.get("SUPABASE_KEY")
-        if not url or not key:
-            raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set. Check .env.")
-        _client = create_client(url, key)
+        _client = create_client(settings.supabase_url, settings.supabase_key)
     return _client
 
 

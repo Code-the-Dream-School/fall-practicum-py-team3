@@ -1,5 +1,8 @@
 import streamlit as st
 import pandas as pd     # Used to work with tabular data
+from pathlib import Path
+
+from pipeline.config import PROJECT_ROOT
 from daily import daily_summary as daily
 from charts import measure_pollutants as mp, raw_gold_comparison as comp
 
@@ -14,7 +17,7 @@ def show_daily():
        
 def show_air_quality():
     with st.container(border=True):
-        details = pd.read_csv("pollutants.csv").set_index("name",drop=False)
+        details = pd.read_csv(PROJECT_ROOT / "config" / "pollutants.csv").set_index("name", drop=False)
         select = st.selectbox("View pollutants", details["name"], index=None)
         
         if select in details.index:
