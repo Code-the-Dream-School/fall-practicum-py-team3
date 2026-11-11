@@ -1,5 +1,8 @@
-from pathlib import Path
 from supabase import create_client
+
+from pipeline.log import get_logger
+
+logger = get_logger(__name__)
 import data_contracts.schemas as schemas
 from pipeline.extract.extract import extract as ext, City, CITIES, get_incremental_window, extract_incremental_window
 from pipeline.run_tracking import start_run, finish_run, fail_run
@@ -27,11 +30,11 @@ def load_raw(ext):
             .execute()
         )
 
-        print(f"Upserted {len(response.data)} rows into raw_air_quality")
+        logger.info("Upserted %s rows into raw_air_quality", len(response.data))
         return len(response.data)
 
     except Exception as error:
-        print(f"Failed to load raw air quality records: {error}.")
+        logger.exception("Failed to load raw air quality records: %s", error)
         raise
 
 # incremental
