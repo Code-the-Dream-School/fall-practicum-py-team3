@@ -17,23 +17,22 @@ REC = {
 
 
 def test_valid_record():
-    r = AirQualityResponse.model_validate({"coord": [-77.04, 38.9], "list": [REC]})
+    r = AirQualityResponse.model_validate({"coord": {"lon": -77.04, "lat": 38.9}, "list": [REC]})
     assert r.list[0].main.aqi == 2
 
 
 def test_missing_pollutant_is_null():
     rec = {**REC, "components": {"co": 1.0}}
-    r = AirQualityResponse.model_validate({"coord": [-77.04, 38.9], "list": [rec]})
+    r = AirQualityResponse.model_validate({"coord": {"lon": -77.04, "lat": 38.9}, "list": [rec]})
     assert r.list[0].components.o3 is None
 
 
 def test_wrong_type_rejected():
     rec = {**REC, "main": {"aqi": "high"}}
     with pytest.raises(ValidationError):
-        AirQualityResponse.model_validate({"coord": [-77.04, 38.9], "list": [rec]})
+        AirQualityResponse.model_validate({"coord": {"lon": -77.04, "lat": 38.9}, "list": [rec]})
 
 
-@pytest.mark.xfail(reason="contract has coord as list; the real API returns a dict")
 def test_real_api_coord_shape():
     AirQualityResponse.model_validate(
         {"coord": {"lon": -77.04, "lat": 38.9}, "list": [REC]})
