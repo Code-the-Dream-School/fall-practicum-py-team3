@@ -9,4 +9,4 @@ Batch data pipeline comparing air quality across U.S. cities and Census division
 
 After setup:
 - Run pipeline: `cd services/pipeline && python run_pipeline.py`
-- Run tests: `cd services/pipeline && pytest`
+- Run tests: `pytest` (from repo root)
