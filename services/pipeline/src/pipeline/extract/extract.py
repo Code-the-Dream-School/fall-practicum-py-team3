@@ -226,17 +226,19 @@ def get_incremental_window():
         datetime.fromisoformat(last_run["window_end"]).timestamp()
     )
     
-    next_start = last_end + 3600 # 3600 = seconds in 1 hour
+    next_start = last_end + 3600 # 3600 for seconds in 1 hr
     
     # extraction of new start window
     current_hour = (
         int(datetime.now(timezone.utc).timestamp()) // 3600
-    ) * 3600
+    ) * 3600 
     
-    if next_start >= current_hour:
+    next_end = current_hour - 3600
+    
+    if next_start > next_end:
         return None
     
-    return next_start, current_hour
+    return next_start, next_end
 
 # incremental stuff
 def extract_incremental_window(name, coords, start, end):
@@ -244,7 +246,8 @@ def extract_incremental_window(name, coords, start, end):
     city = City(
         LAT=coords["LAT"],
         LON=coords["LON"],
-        START=start
+        START=start,
+        END=end
     )
     
     for attempt in range(1, RETRIES + 1):
