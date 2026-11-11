@@ -1,4 +1,6 @@
+from pipeline.load.load import supabase
 from pipeline.transform.transform import aqi_category
+from pipeline.run_tracking import start_run, finish_run, fail_run
 import json
 import os
 from datetime import datetime, timezone
@@ -138,27 +140,71 @@ def enrich_records(records):
 
 
 def run_enrichment(client, batch_size=25, limit=None):
-    # read only rows that haven't been enriched yet (this is what makes reruns safe)
-    query = (
-        client.table("daily_insight")
-        .select("*")
-        .is_("enriched_at", "null")
-    )
-    if limit:
-        query = query.limit(limit)  # small test runs
-    rows = query.execute().data
-
-    if not rows:
-        print("Nothing to enrich.")
-        return []
-
-    results = []
-    for start in range(0, len(rows), batch_size):
-        batch = rows[start:start + batch_size]
-        batch_results = enrich_records(batch)
-        results.extend(batch_results)
-        print(f"Enriched {len(results)} of {len(rows)}")
+    run_id = start_run()
+    rows_extracted = 0
+    rows_transformed = 0
+    rows_loaded = 0
+    
+    try:
+        # read only rows that haven't been enriched yet (this is what makes reruns safe)
+        query = (
+            client.table("daily_insight")
+            .select("*")
+            .is_("enriched_at", "null")
+        )
+        if limit:
+            query = query.limit(limit)  # small test runs
+        rows = query.execute().data
         
-    failed = [r for r in results if r.get("enrichment_error")]
-    print(f"Enriched {len(results) - len(failed)}, failed {len(failed)}.")
-    return results
+        rows_extracted = len(rows)
+
+        if not rows:
+            print("Nothing to enrich.")
+            finish_run(
+                run_id,
+                rows_extracted=rows_extracted,
+                rows_transformed=rows_transformed,
+                rows_loaded=rows_loaded,
+            )
+            return []
+
+        results = []
+        for start in range(0, len(rows), batch_size):
+            batch = rows[start:start + batch_size]
+            batch_results = enrich_records(batch)
+            results.extend(batch_results)
+            
+            rows_transformed += len(batch_results)
+            
+            # save enriched results to supabase
+            client.table("daily_insight").upsert(
+                batch_results,
+                on_conflict="city,timestamp"
+            ).execute()
+            
+            rows_loaded += len(batch_results)
+            
+            print(f"Enriched {len(results)} of {len(rows)}")
+            
+        failed = [r for r in results if r.get("enrichment_error")]
+        print(f"Enriched {len(results) - len(failed)}, failed {len(failed)}.")
+        finish_run(
+            run_id,
+            rows_extracted=rows_extracted,
+            rows_transformed=rows_transformed,
+            rows_loaded=rows_loaded,
+        )
+        return results
+    
+    except Exception as error:
+        fail_run(
+            run_id,
+            error,
+            rows_extracted=rows_extracted,
+            rows_transformed=rows_transformed,
+            rows_loaded=rows_loaded,
+        )
+        raise
+    
+if __name__ == "__main__":
+    run_enrichment()
