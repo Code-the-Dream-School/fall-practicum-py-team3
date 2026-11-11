@@ -9,9 +9,6 @@ supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
 response = (
     supabase.table("daily_insight").select("*").execute()
 )
-# Steps: 
-# 1. create a dataframe of the insight table (review others code, 
-# my code from Python 200, or search) 
 
 def insight_to_dashboard():
     data = response.data

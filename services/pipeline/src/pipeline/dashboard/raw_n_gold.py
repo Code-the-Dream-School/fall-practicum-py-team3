@@ -25,7 +25,9 @@ def raw_gold():
     })
 
     comp = comp.rename_axis("Pollutants").reset_index()
+    gold_category = gold_df["category"]
     
-    return comp
+    return comp, gold_category
+
 if __name__ == "__main__":
     raw_gold()
