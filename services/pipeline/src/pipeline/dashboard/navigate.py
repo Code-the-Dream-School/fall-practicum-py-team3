@@ -1,23 +1,14 @@
 import streamlit as st
-import pandas as pd     # Used to work with tabular data
+import pandas as pd     
 from daily import daily_summary as daily
 from charts import  raw_gold_comparison as comp, measure_pollutants as mp
+from air_quality import air_quality_tab as air
 
 def show_daily():
     daily()
        
 def show_air_quality():
-    with st.container(border=True):
-        details = pd.read_csv("pollutants.csv").set_index("name",drop=False)
-        select = st.selectbox("View pollutants", details["name"], index=None)
-        
-        if select in details.index:
-            st.markdown("<u>Fact:</u>",unsafe_allow_html=True)
-            st.write(details.loc[select,"what_it_does"])
-            st.markdown("<u>Impact:</u>",unsafe_allow_html=True)
-            st.write(details.loc[select,"air_pollution_impact"])
-        else:
-            st.info("Details haven’t been added for this option yet.")
+   air()
 
 def show_chart():   
     comp()
@@ -36,7 +27,7 @@ def center_nav():
                 "Weather", options, label_visibility="collapsed"
             )
             if not selection:
-                        st.markdown("Please select an option.", text_alignment="center")
+                st.markdown("<h5 style='text-align: left;'>Please select an option.</h5>", unsafe_allow_html=True)
                         
         # Account button
         with right:
