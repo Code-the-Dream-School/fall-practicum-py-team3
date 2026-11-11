@@ -19,24 +19,12 @@ Use these docs when onboarding to the repo, learning the workflow, reviewing pul
 - [What is a data pipeline](./collaboration/what_is_a_data_pipeline.md)
 - [Postman Installation & Guide (pdf)](./collaboration/Postman Installation & Usage Guide.pdf)
 
-## Architecture
-
-Use these docs when you want to understand system structure, data flow, or dashboard design.
-
-- [Architecture diagrams (C4)](./architecture/README.md)
-- [Architecture decision records](./adr/)
-- [Glossary (CONTEXT.md)](../CONTEXT.md)
-
 ## Reference
 
 Use these docs for field-level details, schemas, and API artifacts.
 
 - [OpenWeather API Overview](./reference/openweather_api_overview.md)
 - [OpenWeather Environmental API Reference](./reference/openweather_environmental_api_fields_reference.md)
-- [Sprint 1 Reference: Pull Requests and Contracts First](./references/sprint1-notes.md)
-- [Sprint 2 Reference: Raw and Gold Data, and Idempotent Writes](./references/sprint1-notes.md)
-- [Sprint 3 Reference: Backfilling vs. Incremental Loading](./references/sprint1-notes.md)
-- [Sprint 4 Reference: AWS, Lambda, and EventBridge](./references/sprint1-notes.md)
 
 ## Milestones
 
