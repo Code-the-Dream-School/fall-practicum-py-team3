@@ -1,4 +1,4 @@
-# Sprint 2: Raw and Gold Data, and Idempotent Writes
+# Sprint 2 Reference: Raw and Gold Data, and Idempotent Writes
 
 **Sprint goal:** Learn why pipelines keep raw data apart from gold data, and why every write should be safe to repeat.
 
