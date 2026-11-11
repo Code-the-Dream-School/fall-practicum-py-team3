@@ -2,13 +2,11 @@ from pipeline.load.load import supabase
 from pipeline.transform.transform import aqi_category
 from pipeline.run_tracking import start_run, finish_run, fail_run
 import json
-import os
 from datetime import datetime, timezone
 
 from openai import OpenAI
 
-from dotenv import load_dotenv
-load_dotenv()
+from pipeline.config import settings
 
 def fallback_template(record):  
     category = aqi_category(round(record["aqi_24h_avg"]))
@@ -83,7 +81,7 @@ FEW_SHOT_EXAMPLES = [
 
 
 def call_llm(record):
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    client = OpenAI(api_key=settings.openai_api_key)
     facts = {
         "city": record["city"],
         "date": str(record["timestamp"])[:10],
