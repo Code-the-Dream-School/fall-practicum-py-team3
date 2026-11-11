@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd     # Used to work with tabular data
 from daily import daily_summary as daily
-from charts import measure_pollutants as mp, raw_gold_comparison as comp
+from charts import raw_gold_comparison as comp
 
 # Either do pandas df here or create one function that can be used for multiple files!
 
@@ -21,9 +21,9 @@ def show_air_quality():
         else:
             st.info("Details haven’t been added for this option yet.")
 
-def show_chart():
-    mp()
+def show_chart():   
     comp()
+    # mp()
     
 def center_nav():
     container = st.container(border=True)
