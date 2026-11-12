@@ -47,6 +47,7 @@ def prepare_flow(monkeypatch):
         flow_module, "extract_city", lambda city_name, city: ExtractedRecords()
     )
     monkeypatch.setattr(flow_module, "load_records", lambda records: len(records))
+    monkeypatch.setattr(flow_module, "enrich_records", lambda records: records)
 
 
 def test_pipeline_succeeds(monkeypatch):
@@ -62,7 +63,7 @@ def test_pipeline_succeeds(monkeypatch):
     assert result == {
         "status": "success",
         "mode": "test",
-        "counts": {"extract": 1, "load": 1, "transform": 1, "enrichment": 0},
+        "counts": {"extract": 1, "load": 1, "transform": 1, "enrichment": 1},
     }
 
 
