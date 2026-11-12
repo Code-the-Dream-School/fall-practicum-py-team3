@@ -39,3 +39,5 @@ def test_incremental_window_without_previous_run(monkeypatch):
 # FROM raw_air_quality
 # GROUP BY city, timestamp
 # HAVING COUNT(*) > 1;
+
+# result = "Success. No rows returned"
