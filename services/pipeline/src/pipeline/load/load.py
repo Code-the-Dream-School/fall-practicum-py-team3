@@ -59,11 +59,6 @@ def main_incremental():
     
     start, end = window
     
-    #
-    print("Incremental start:", datetime.fromtimestamp(start, timezone.utc))
-    print("Incremental end:", datetime.fromtimestamp(end, timezone.utc))
-    print("Hours to catch up:", (end - start) // 3600)
-    
     window_start = datetime.fromtimestamp(
         start, timezone.utc
     ).isoformat()

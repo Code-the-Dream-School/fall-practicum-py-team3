@@ -50,14 +50,14 @@ def load_insight():
             latest_record = group.loc[group["_timestamp"].idxmax()]
             
             # use its rolling 24hr aqi avg
-            daily_average = int(round(latest_record["aqi_24h_avg"]))
+            # daily_average = int(round(latest_record["aqi_24h_avg"]))
             
             daily_records.append({
                 "city": city,
                 "timestamp": latest_record["timestamp"],
                 "date": date.isoformat(),
                 "category": latest_record["category"],
-                "aqi_24h_avg": daily_average
+                "aqi_24h_avg": latest_record["aqi_24h_avg"]
             })
             
         rows_transformed = len(daily_records)

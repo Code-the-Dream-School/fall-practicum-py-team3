@@ -45,6 +45,9 @@ def is_usable_insight(text):
 PROMPT_VERSION = "insight-v1"
 MODEL = "gpt-4o-mini"
 
+# pagination for supabase
+PAGE_SIZE = 1000
+
 WRITER_PROMPT = (
     "You write exactly one plain-language sentence about one U.S. city's air "
     "quality for one day, for a general reader. You are given the city, the "
@@ -139,6 +142,41 @@ def enrich_records(records):
     return [enrich_record(r) for r in records]
 
 
+# unenriched
+def get_unenriched_records(client, limit=None):
+    rows = []
+    offset = 0
+    
+    while True:
+        page = (
+            client.table("daily_insight")
+            .select("*")
+            .is_("enriched_at", "null")
+            .order("city")
+            .order("timestamp")
+            .range(offset, offset + PAGE_SIZE - 1)
+            .execute()
+            .data or []
+        )
+        
+        if limit is not None:
+            remaining = limit - len(rows)
+            page = page[:remaining]
+            
+        rows.extend(page)
+        
+        if limit is not None and len(rows) >= limit:
+            break
+        
+        if len(page) < PAGE_SIZE:
+            break
+        
+        offset += PAGE_SIZE
+        
+    return rows
+
+
+
 def run_enrichment(client, batch_size=25, limit=None):
     run_id = start_run()
     rows_extracted = 0
@@ -147,15 +185,19 @@ def run_enrichment(client, batch_size=25, limit=None):
     
     try:
         # read only rows that haven't been enriched yet (this is what makes reruns safe)
-        query = (
-            client.table("daily_insight")
-            .select("*")
-            .is_("enriched_at", "null")
-        )
-        if limit:
-            query = query.limit(limit)  # small test runs
-        rows = query.execute().data
+        # query = (
+        #     client.table("daily_insight")
+        #     .select("*")
+        #     .is_("enriched_at", "null")
+        # )
+        # if limit:
+        #     query = query.limit(limit)  # small test runs
+        # rows = query.execute().data
         
+        
+        rows = get_unenriched_records(client, limit)
+        
+        # pipeline runs 
         rows_extracted = len(rows)
 
         if not rows:
@@ -205,6 +247,8 @@ def run_enrichment(client, batch_size=25, limit=None):
             rows_loaded=rows_loaded,
         )
         raise
-    
+
 if __name__ == "__main__":
-    run_enrichment()
+    run_enrichment(supabase, batch_size=25, limit=1025)
+    
+    
