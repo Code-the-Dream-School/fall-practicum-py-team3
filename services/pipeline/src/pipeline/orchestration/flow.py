@@ -19,6 +19,7 @@ from pipeline.extract.extract import (
     extract,
     extract_all_windows,
 )
+from pipeline.enrichment.enrichment import enrich_records
 from pipeline.load.load import load_raw
 from pipeline.transform.transform import transform as transform_records
 from schemas import GoldAirQuality
@@ -78,8 +79,8 @@ def transform(records: list[dict]) -> list[GoldAirQuality]:
 
 # ---------------------------------------------------------------------------- #
 @task(retries=2, retry_delay_seconds=5)
-def enrich(records: list[dict]) -> list[dict]:
-    return records
+def enrich(records: list[GoldAirQuality]) -> list[dict]:
+    return enrich_records([record.model_dump() for record in records])
 
 
 # ---------------------------------------------------------------------------- #
@@ -149,11 +150,11 @@ def run_pipeline(
         logger.info("Transform stage complete")
 
         # ---------------------------------------------------------------------------- #
-        # stage = "enrichment"
-        # logger.info("Enrichment stage starting")
-        # enriched_records = enrich(transformed_records)
-        # result_counts["enrichment"] = len(enriched_records)
-        # logger.info("Enrichment stage complete")
+        stage = "enrichment"
+        logger.info("Enrichment stage starting")
+        enriched_records = enrich(transformed_records)
+        result_counts["enrichment"] = len(enriched_records)
+        logger.info("Enrichment stage complete")
 
         # ---------------------------------------------------------------------------- #
         result = {"status": "success", "mode": mode, "counts": result_counts}
