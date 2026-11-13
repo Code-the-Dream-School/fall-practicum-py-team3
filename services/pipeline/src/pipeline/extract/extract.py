@@ -66,8 +66,8 @@ CITIES = {
             "Anchorage": {"LAT": 61.22, "LON": -149.90}
         }
 
-START = 1606435200
-END = 1792022400
+START = 1761350400
+END = 1792886400
 
 # cache > prevent redundant requests for identical historical windows
 _POLLUTION_CACHE = {} # in-memory dict > stores data['list'] for {lat, lon, start, end}
@@ -169,6 +169,7 @@ def extract(city: City) -> RawAirQuality:
 ##Chunking and caching logic for extracting all windows of data for a city
 CHUNK_SECONDS = 365 * 24 * 60 * 60  # one year per API call, which is known to work
 RETRIES = 3
+RETRY_DELAY_SECONDS = 1
 
 
 def raw_path(city_name):
@@ -260,7 +261,7 @@ def extract_incremental_window(name, coords, start, end):
             if attempt == RETRIES:
                 raise
             
-            time.sleep(5 * attempt)
+            time.sleep(RETRY_DELAY_SECONDS * attempt)
         
         
 
@@ -281,9 +282,9 @@ def write_to_json(city_name, result):
 
 def main():
     run_id = start_run(
-        run_mode="backfill",
-        window_start="2025-10-25T00:00:00+00:00",
-        window_end="2026-10-25T00:00:00+00:00"
+        run_mode = "backfill",
+        window_start = datetime.fromtimestamp(START, timezone.utc).isoformat(),
+        window_end = datetime.fromtimestamp(END, timezone.utc).isoformat()
     )
     rows_extracted = 0
     
