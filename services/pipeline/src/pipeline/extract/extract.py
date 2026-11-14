@@ -8,7 +8,8 @@ import time
 import sys
 from importlib import import_module
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[5] / "data_contracts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "data_contracts"))
+from pipeline.run_tracking import start_run, finish_run, fail_run, get_last_successful_run
 
 _schemas = import_module("schemas")
 RawAirQuality = _schemas.RawAirQuality
@@ -65,8 +66,8 @@ CITIES = {
             "Anchorage": {"LAT": 61.22, "LON": -149.90}
         }
 
-START = 1606435200
-END = 1792022400
+START = 1761350400
+END = 1792886400
 
 # cache > prevent redundant requests for identical historical windows
 _POLLUTION_CACHE = {} # in-memory dict > stores data['list'] for {lat, lon, start, end}
@@ -168,6 +169,7 @@ def extract(city: City) -> RawAirQuality:
 ##Chunking and caching logic for extracting all windows of data for a city
 CHUNK_SECONDS = 365 * 24 * 60 * 60  # one year per API call, which is known to work
 RETRIES = 3
+RETRY_DELAY_SECONDS = 1
 
 
 def raw_path(city_name):
@@ -212,7 +214,56 @@ def extract_all_windows(name, coords):
         request_parameters=RequestParameters(lat=coords["LAT"], lon=coords["LON"], start=START, end=END),
         payload=merged,
     )
+    
+# incremental stuff
+def get_incremental_window():
+    """Calculate the next hourly extraction window."""
+    last_run = get_last_successful_run()
+    
+    if last_run is None:
+        raise ValueError("No successful previous run found.")
+    
+    last_end = int(
+        datetime.fromisoformat(last_run["window_end"]).timestamp()
+    )
+    
+    next_start = last_end + 3600 # 3600 for seconds in 1 hr
+    
+    # extraction of new start window
+    current_hour = (
+        int(datetime.now(timezone.utc).timestamp()) // 3600
+    ) * 3600 
+    
+    next_end = current_hour - 3600
+    
+    if next_start > next_end:
+        return None
+    
+    return next_start, next_end
 
+# incremental stuff
+def extract_incremental_window(name, coords, start, end):
+    """Extract only new hourly data for one city."""
+    city = City(
+        LAT=coords["LAT"],
+        LON=coords["LON"],
+        START=start,
+        END=end
+    )
+    
+    for attempt in range(1, RETRIES + 1):
+        try:
+            return extract(city)
+        
+        except requests.exceptions.RequestException as err:
+            print(f"{name}: attempt {attempt} failed ({err})")
+            
+            if attempt == RETRIES:
+                raise
+            
+            time.sleep(RETRY_DELAY_SECONDS * attempt)
+        
+        
 
 def has_window(name):
     """True if this city's file already covers START..END. A missing or unreadable file means fetch again."""
@@ -229,12 +280,44 @@ def write_to_json(city_name, result):
     with open(raw_path(city_name), "w") as file:
         json.dump(result.model_dump(mode="json"), file)
 
+def main():
+    run_id = start_run(
+        run_mode = "backfill",
+        window_start = datetime.fromtimestamp(START, timezone.utc).isoformat(),
+        window_end = datetime.fromtimestamp(END, timezone.utc).isoformat()
+    )
+    rows_extracted = 0
+    
+    try:
+        for name, coordinates in CITIES.items():
+            if has_window(name):
+                print(f"{name}: already has the full window, skipping")
+                continue
         
+            result = extract_all_windows(name, coordinates)
+            write_to_json(name, result)
+        
+            count = len(result.payload.list)
+            rows_extracted += count
+        
+            print(f"{name}: {count} records saved")
+        
+        finish_run(
+            run_id,
+            rows_extracted=rows_extracted,
+            rows_transformed=0,
+            rows_loaded=0,
+        )
+        
+        print("Extraction completed successfully.")
+        
+    except Exception as error:
+        fail_run(
+            run_id,
+            error,
+            rows_extracted=rows_extracted,
+        )
+        raise
+    
 if __name__ == "__main__":
-    for name, coordinates in CITIES.items():
-        if has_window(name):
-            print(f"{name}: already has the full window, skipping")
-            continue
-        result = extract_all_windows(name, coordinates)
-        write_to_json(name, result)
-        print(f"{name}: {len(result.payload.list)} records saved")
+    main()

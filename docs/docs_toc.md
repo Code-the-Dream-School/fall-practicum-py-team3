@@ -19,14 +19,6 @@ Use these docs when onboarding to the repo, learning the workflow, reviewing pul
 - [What is a data pipeline](./collaboration/what_is_a_data_pipeline.md)
 - [Postman Installation & Guide (pdf)](./collaboration/Postman Installation & Usage Guide.pdf)
 
-## Architecture
-
-Use these docs when you want to understand system structure, data flow, or dashboard design.
-
-- [Architecture diagrams (C4)](./architecture/README.md)
-- [Architecture decision records](./adr/)
-- [Glossary (CONTEXT.md)](../CONTEXT.md)
-
 ## Reference
 
 Use these docs for field-level details, schemas, and API artifacts.

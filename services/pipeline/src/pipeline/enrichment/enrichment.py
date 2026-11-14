@@ -1,4 +1,6 @@
+from pipeline.load.load import supabase
 from pipeline.transform.transform import aqi_category
+from pipeline.run_tracking import start_run, finish_run, fail_run
 import json
 import os
 from datetime import datetime, timezone
@@ -42,6 +44,9 @@ def is_usable_insight(text):
 #LLM stuff
 PROMPT_VERSION = "insight-v1"
 MODEL = "gpt-4o-mini"
+
+# pagination for supabase
+PAGE_SIZE = 1000
 
 WRITER_PROMPT = (
     "You write exactly one plain-language sentence about one U.S. city's air "
@@ -137,28 +142,114 @@ def enrich_records(records):
     return [enrich_record(r) for r in records]
 
 
-def run_enrichment(client, batch_size=25, limit=None):
-    # read only rows that haven't been enriched yet (this is what makes reruns safe)
-    query = (
-        client.table("daily_insight")
-        .select("*")
-        .is_("enriched_at", "null")
-    )
-    if limit:
-        query = query.limit(limit)  # small test runs
-    rows = query.execute().data
-
-    if not rows:
-        print("Nothing to enrich.")
-        return []
-
-    results = []
-    for start in range(0, len(rows), batch_size):
-        batch = rows[start:start + batch_size]
-        batch_results = enrich_records(batch)
-        results.extend(batch_results)
-        print(f"Enriched {len(results)} of {len(rows)}")
+# unenriched
+def get_unenriched_records(client, limit=None):
+    rows = []
+    offset = 0
+    
+    while True:
+        page = (
+            client.table("daily_insight")
+            .select("*")
+            .is_("enriched_at", "null")
+            .order("city")
+            .order("timestamp")
+            .range(offset, offset + PAGE_SIZE - 1)
+            .execute()
+            .data or []
+        )
         
-    failed = [r for r in results if r.get("enrichment_error")]
-    print(f"Enriched {len(results) - len(failed)}, failed {len(failed)}.")
-    return results
+        if limit is not None:
+            remaining = limit - len(rows)
+            page = page[:remaining]
+            
+        rows.extend(page)
+        
+        if limit is not None and len(rows) >= limit:
+            break
+        
+        if len(page) < PAGE_SIZE:
+            break
+        
+        offset += PAGE_SIZE
+        
+    return rows
+
+
+
+def run_enrichment(client, batch_size=25, limit=None):
+    run_id = start_run()
+    rows_extracted = 0
+    rows_transformed = 0
+    rows_loaded = 0
+    
+    try:
+        # read only rows that haven't been enriched yet (this is what makes reruns safe)
+        # query = (
+        #     client.table("daily_insight")
+        #     .select("*")
+        #     .is_("enriched_at", "null")
+        # )
+        # if limit:
+        #     query = query.limit(limit)  # small test runs
+        # rows = query.execute().data
+        
+        
+        rows = get_unenriched_records(client, limit)
+        
+        # pipeline runs 
+        rows_extracted = len(rows)
+
+        if not rows:
+            print("Nothing to enrich.")
+            finish_run(
+                run_id,
+                rows_extracted=rows_extracted,
+                rows_transformed=rows_transformed,
+                rows_loaded=rows_loaded,
+            )
+            return []
+
+
+        results = []
+        for start in range(0, len(rows), batch_size):
+            batch = rows[start:start + batch_size]
+            batch_results = enrich_records(batch)
+            results.extend(batch_results)
+            
+            rows_transformed += len(batch_results)
+            
+            # save enriched results to supabase
+            client.table("daily_insight").upsert(
+                batch_results,
+                on_conflict="city,timestamp"
+            ).execute()
+            
+            rows_loaded += len(batch_results)
+            
+            print(f"Enriched {len(results)} of {len(rows)}")
+            
+        failed = [r for r in results if r.get("enrichment_error")]
+        print(f"Enriched {len(results) - len(failed)}, failed {len(failed)}.")
+        finish_run(
+            run_id,
+            rows_extracted=rows_extracted,
+            rows_transformed=rows_transformed,
+            rows_loaded=rows_loaded,
+        )
+        return results
+    
+    except Exception as error:
+        fail_run(
+            run_id,
+            error,
+            rows_extracted=rows_extracted,
+            rows_transformed=rows_transformed,
+            rows_loaded=rows_loaded,
+        )
+        raise
+
+if __name__ == "__main__":
+    run_enrichment(supabase, batch_size=25, limit=None)
+    
+    

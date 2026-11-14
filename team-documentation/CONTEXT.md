@@ -2,7 +2,7 @@
 
 Compares air quality across U.S. cities and Divisions over time, using OpenWeather's modelled air pollution data from November 2020 onward.
 
-> **What this file is for:** our shared vocabulary. Use these exact words in code, Jira tickets, PRs and on the dashboard; avoid the words under _Avoid_. If a new concept appears or a word starts meaning two things, add or fix it here in a PR. It is a glossary only: decisions go in [team-decisions.md](team-documentation/team-decisions.md), design in [docs/architecture](docs/architecture/README.md).
+> **What this file is for:** our shared vocabulary. Use these exact words in code, Jira tickets, PRs and on the dashboard; avoid the words under _Avoid_. If a new concept appears or a word starts meaning two things, add or fix it here in a PR. It is a glossary only: decisions go in [team-decisions.md](./team-decisions.md), design in [architecture](./architecture/README.md).
 
 ## Places
 
