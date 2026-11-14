@@ -14,3 +14,5 @@ SQL script for timeouts in Supabase:
 
 alter role service_role set statement_timeout = '60s';
 NOTIFY pgrst, 'reload config';
+
+If all the cities don’t load on your end, increase the max rows in Supabase (Project Settings → Data API → Settings (tab in Data API)).
