@@ -210,6 +210,7 @@ def run_enrichment(client, batch_size=25, limit=None):
             )
             return []
 
+
         results = []
         for start in range(0, len(rows), batch_size):
             batch = rows[start:start + batch_size]
@@ -249,6 +250,6 @@ def run_enrichment(client, batch_size=25, limit=None):
         raise
 
 if __name__ == "__main__":
-    run_enrichment(supabase, batch_size=25, limit=1025)
+    run_enrichment(supabase, batch_size=25, limit=None)
     
     
