@@ -19,7 +19,7 @@ def align_content(day, date, aqi, category):
     
 def daily_summary():
     daily_df, city, date_df, category = insight()
-    st.selectbox("Current city:",city,index=None)
+    st.selectbox("Current city:",sorted(city.unique()),index=None)
 
     days = ['Mon', 'Tue', 'Wed', 'Th', 'Fri', 'Sat', 'Sun']
     
