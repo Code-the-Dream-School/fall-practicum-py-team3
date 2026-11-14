@@ -19,13 +19,19 @@ def align_content(day, date, aqi, category):
     
 def daily_summary():
     daily_df, city, date_df, category = insight()
-    st.selectbox("Current city:",sorted(city.unique()),index=None)
+    chosen_city = st.selectbox("",sorted(city.unique()),index=None, placeholder="Choose a city:")
 
     days = ['Mon', 'Tue', 'Wed', 'Th', 'Fri', 'Sat', 'Sun']
     
     with st.container(border=True):
         align_content("Daily","Date","AQI","Category")
 
-    for day, date, daily, cat in zip(days, date_df, daily_df, category):
-       with st.container(border=True):
-        align_content(day,date,daily,cat)
+    if chosen_city:
+       selected_city = city == chosen_city
+       new_daily = daily_df[selected_city] # selected_city is the mask
+       new_date = date_df[selected_city]
+       new_cat = category[selected_city]
+          
+       for day, date, daily, cat in zip(days, new_date, new_daily, new_cat):
+            with st.container(border=True):
+                align_content(day,date,daily,cat)
