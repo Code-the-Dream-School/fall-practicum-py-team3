@@ -6,7 +6,7 @@ import plotly.express as px
 from load_insight_dashboard import insight_to_dashboard as insight
 from raw_n_gold import raw_gold as comparison
 
-daily_df, city, date_df, insight_cat = insight()
+daily_df, city, date_df, insight_cat, category = insight()
 comp, gold_category = comparison()
 
 def raw_gold_comparison():

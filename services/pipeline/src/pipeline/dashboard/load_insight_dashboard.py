@@ -17,10 +17,13 @@ def insight_to_dashboard():
     daily_df = df["aqi_24h_avg"]
     city = df["city"]
 
-    date_df = pd.to_datetime(df["date"], utc=True).dt.strftime("%B %d")
+    dates = pd.to_datetime(df["date"], utc=True)
+    date_df = dates.dt.strftime("%B %d")
+    days = dates.dt.day_name()
+    
     category = df["category"]
     
-    return daily_df, city, date_df, category
+    return daily_df, city, date_df, category, days
 
 if __name__ == "__main__":
     insight_to_dashboard()
