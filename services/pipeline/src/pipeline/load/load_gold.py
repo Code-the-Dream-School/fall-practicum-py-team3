@@ -1,8 +1,14 @@
 from pipeline.transform.transform import REQUIRED, transform
 from pipeline.load.load import supabase
+from pipeline.run_tracking import start_run, finish_run, fail_run
 
 
 def load_gold():
+    run_id = start_run()
+    rows_extracted = 0
+    rows_transformed = 0
+    rows_loaded = 0
+    
     try:
         # supabase only does 1000 records; so using batches
         raw_records = []
@@ -21,6 +27,8 @@ def load_gold():
         
             batch = response.data or []
             raw_records.extend(batch)
+            
+            rows_extracted += len(batch)
         
             if len(batch) < batch_size:
                 break
@@ -42,13 +50,27 @@ def load_gold():
         
         if not raw_records:
             print("No raw records to transform.")
+            finish_run(
+                run_id,
+                rows_extracted=rows_extracted,
+                rows_transformed=rows_transformed,
+                rows_loaded=rows_loaded,
+            )
             return
         
         # transform raw records into gold records
         gold_records = transform(raw_records)
         
+        rows_transformed = len(gold_records)
+        
         if not gold_records:
             print("No gold records to load.")
+            finish_run(
+                run_id,
+                rows_extracted=rows_extracted,
+                rows_transformed=rows_transformed,
+                rows_loaded=rows_loaded,
+            )
             return
         
         # keep one record per city and timestamp/remove duplicates
@@ -74,10 +96,26 @@ def load_gold():
             supabase.table("gold_air_quality").upsert(
                 batch, on_conflict="city,timestamp"
             ).execute()
+            
+            rows_loaded += len(batch)
         
         print(f"Loaded {len(gold_records)} gold records.")
         
+        finish_run(
+            run_id,
+            rows_extracted=rows_extracted,
+            rows_transformed=rows_transformed,
+            rows_loaded=rows_loaded,
+        )
+        
     except Exception as error:
+        fail_run(
+            run_id,
+            error,
+            rows_extracted=rows_extracted,
+            rows_transformed=rows_transformed,
+            rows_loaded=rows_loaded,
+        )
         print(f"Failed to load gold air quality records: {error}.")
         raise
         

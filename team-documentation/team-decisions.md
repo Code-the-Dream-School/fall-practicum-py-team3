@@ -70,7 +70,7 @@ The list lives in [`config/cities.yaml`](../config/cities.yaml) (name, state, Di
 
 **AQI scale:** We use OpenWeather's 1 to 5 scale for the AQI levels, not the U.S. EPA scale or other country-specific scales. The health tips use EPA guidelines for each pollutant, so the tips are based on EPA guidance even though the AQI levels follow OpenWeather's scale.
 
-| Value | Label     | 
+| Value | Label     |
 | ----- | --------- |
 | 1     | Good      |
 | 2     | Fair      |
@@ -103,10 +103,6 @@ Transform: Turn hourly raw data into one Daily Reading per city per local date (
 
 Load: Save Daily Readings into Supabase. Use city plus local date as the unique key so rerunning the pipeline does not create duplicates.
 
-Insights (proposed, see [ADR 0001](../docs/adr/0001-use-jev-for-insights.md)): Python computes facts per city-month, the Jev model makes typed judgments about them, and templates turn them into a short plain-language Insight.
-
-The full history is loaded once (Backfill Run). After that, a scheduled AWS Lambda function adds each new day (Incremental Run). Locally, a Prefect flow runs the same stage functions. AWS region is not decided yet; `us-east-1` is a placeholder and should match the Supabase project's region.
-
 ## Dashboard
 
 A Streamlit dashboard, hosted on Streamlit Community Cloud, reads Supabase with a read-only user. It lets the user pick a city or Division, shows the latest air quality label and health tip, charts pollutant levels over time, and states that the data is modelled. It redeploys when `main` changes, so `main` is protected and should also require passing checks (not set up yet).
@@ -117,4 +113,4 @@ The repo started from a generic practicum template. Where old files or code disa
 
 ## Architecture
 
-Diagrams: [docs/architecture](../docs/architecture/README.md). Glossary: [CONTEXT.md](../CONTEXT.md).
+Diagrams: [architecture](./architecture/README.md). Glossary: [CONTEXT.md](./CONTEXT.md).

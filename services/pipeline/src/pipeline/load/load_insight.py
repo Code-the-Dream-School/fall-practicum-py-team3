@@ -2,16 +2,29 @@ import pandas as pd
 
 from pipeline.insight_data import get_gold_records
 from pipeline.load.load import supabase
+from pipeline.run_tracking import start_run, finish_run, fail_run
 
 def load_insight():
+    run_id = start_run()
+    rows_extracted = 0
+    rows_transformed = 0
+    rows_loaded = 0
+    
     try:
         # retrieve gold records from supabase / already batched
         gold_records = get_gold_records(supabase)
+        rows_extracted = len(gold_records)
         
         print(f"Fetched {len(gold_records)} gold records.")
         
         if not gold_records:
             print("No gold records to process.")
+            finish_run(
+                run_id,
+                rows_extracted=rows_extracted,
+                rows_transformed=rows_transformed,
+                rows_loaded=rows_loaded,
+            )
             return
         
         # format / filter:
@@ -37,18 +50,26 @@ def load_insight():
             latest_record = group.loc[group["_timestamp"].idxmax()]
             
             # use its rolling 24hr aqi avg
-            daily_average = int(round(latest_record["aqi_24h_avg"]))
+            # daily_average = int(round(latest_record["aqi_24h_avg"]))
             
             daily_records.append({
                 "city": city,
                 "timestamp": latest_record["timestamp"],
                 "date": date.isoformat(),
                 "category": latest_record["category"],
-                "aqi_24h_avg": daily_average
+                "aqi_24h_avg": latest_record["aqi_24h_avg"]
             })
+            
+        rows_transformed = len(daily_records)
             
         if not daily_records:
             print("No daily records with at least 18 hours.")
+            finish_run(
+                run_id,
+                rows_extracted=rows_extracted,
+                rows_transformed=rows_transformed,
+                rows_loaded=rows_loaded,
+            )
             return
         
         print(f"Prepared {len(daily_records)} daily records.")
@@ -64,9 +85,25 @@ def load_insight():
                 on_conflict="city,timestamp"
             ).execute()
             
+            rows_loaded += len(batch)
+            
         print(f"Loaded {len(daily_records)} daily insight records.")
 
+        finish_run(
+            run_id,
+            rows_extracted=rows_extracted,
+            rows_transformed=rows_transformed,
+            rows_loaded=rows_loaded,
+        )
+
     except Exception as error:
+        fail_run(
+            run_id,
+            error,
+            rows_extracted=rows_extracted,
+            rows_transformed=rows_transformed,
+            rows_loaded=rows_loaded,
+        )
         print(f"Failed to load daily insight records: {error}.")
         raise
 
