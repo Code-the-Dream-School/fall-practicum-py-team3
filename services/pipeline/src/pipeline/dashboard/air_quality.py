@@ -1,9 +1,11 @@
+from pathlib import Path
+
 import streamlit as st
 import pandas as pd
  
 def air_quality_tab():    
     with st.container(border=True):
-            details = pd.read_csv("pollutants.csv").set_index("name",drop=False)
+            details = pd.read_csv(Path(__file__).with_name("pollutants.csv")).set_index("name",drop=False)
             select = st.selectbox("View pollutants", details["name"], index=None)
             
             if select in details.index:
