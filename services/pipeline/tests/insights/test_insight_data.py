@@ -19,12 +19,17 @@ class InMemoryQuery:
     def __init__(self, rows, error=None):
         self._rows, self._error = list(rows), error
         self._order, self._lo, self._hi = [], 0, None
+        self._limit = None
 
     def select(self, *_):
         return self
 
     def eq(self, col, val):
         self._rows = [r for r in self._rows if r.get(col) == val]
+        return self
+
+    def gt(self, col, val):
+        self._rows = [r for r in self._rows if r.get(col) > val]
         return self
 
     def gte(self, col, val):
@@ -43,13 +48,19 @@ class InMemoryQuery:
         self._lo, self._hi = lo, hi
         return self
 
+    def limit(self, count):
+        self._limit = count
+        return self
+
     def execute(self):
         if self._error:
             raise self._error
         rows = sorted(self._rows, key=lambda r: tuple(r[c] for c in self._order))
         end = None if self._hi is None else self._hi + 1
-        return SimpleNamespace(data=rows[self._lo:end])
-
+        rows = rows[self._lo:end]
+        if self._limit is not None:
+            rows = rows[:self._limit]
+        return SimpleNamespace(data=rows)
 
 class InMemoryClient:
     def __init__(self, tables, error=None):
