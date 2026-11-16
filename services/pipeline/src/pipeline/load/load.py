@@ -34,6 +34,7 @@ def load_raw(records):
     try:
         batch_size = 2000
         total = len(records)
+        total_loaded = 0 # running count of rows saved
         for offset in range(0, total, batch_size): # starting indicies > each as offset
             batch = records[offset : offset + batch_size] # list slicing > sublist
             batch_number = offset // batch_size + 1 # integer division > +1 for ordinal
@@ -49,7 +50,9 @@ def load_raw(records):
                 .upsert(batch, on_conflict="city,timestamp")
                 .execute()
             )
+            total_loaded += len(response.data) # add batch's saved rows to count
             print(f"Upserted {len(response.data)} rows in batch {batch_number}")
+            return total_loaded
 
     except Exception as error:
         print(f"Failed to load raw air quality records: {error}.")

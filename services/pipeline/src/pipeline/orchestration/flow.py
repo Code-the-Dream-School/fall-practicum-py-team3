@@ -19,8 +19,10 @@ from pipeline.extract.extract import (
     extract,
     extract_all_windows,
 )
-from pipeline.enrichment.enrichment import enrich_records
-from pipeline.load.load import load_raw
+from pipeline.enrichment.enrichment import run_enrichment
+from pipeline.load.load import load_raw, supabase
+from pipeline.load.load_gold import load_gold
+from pipeline.load.load_insight import load_insight
 from pipeline.transform.transform import transform as transform_records
 from schemas import GoldAirQuality
 
@@ -63,30 +65,33 @@ def extract_city(city_name: str, city: City) -> RawAirQuality:
 # ---------------------------------------------------------------------------- #
 @task(retries=2, retry_delay_seconds=5)
 def load_records(records: list[dict]) -> int:
-    if not records:
-        logger = get_run_logger()
-        logger.error("Load stage received no records")
-        raise ValueError("Load stage received no records")
     load_raw(records)
     return len(records)
 
 
 # ---------------------------------------------------------------------------- #
-@task(retries=2, retry_delay_seconds=5)
+@task
 def transform(records: list[dict]) -> list[GoldAirQuality]:
     return transform_records(records)
 
 
 # ---------------------------------------------------------------------------- #
 @task(retries=2, retry_delay_seconds=5)
-def enrich(records: list[GoldAirQuality]) -> list[dict]:
-    return enrich_records([record.model_dump() for record in records])
+def publish_gold_and_insights() -> None:
+    load_gold()
+    load_insight()
+
+
+# ---------------------------------------------------------------------------- #
+@task(retries=2, retry_delay_seconds=5)
+def enrich() -> list[dict]:
+    return run_enrichment(supabase)
 
 
 # ---------------------------------------------------------------------------- #
 @flow(name="air-quality-pipeline", log_prints=True)
 def run_pipeline(
-    mode: str = "historical",
+    mode: str = "backfill",
     # raw coordinate dicts or fully configured City (Pydantic model) objects
     inputs: Mapping[str, Mapping[str, float] | City] | None = None,
     start: int = START,
@@ -150,9 +155,14 @@ def run_pipeline(
         logger.info("Transform stage complete")
 
         # ---------------------------------------------------------------------------- #
+        stage = "publish_gold_and_insights"
+        logger.info("Publish gold and insights stage starting")
+        publish_gold_and_insights()  # so daily_insight has rows
+        logger.info("Publish gold and insights stage complete")
+
         stage = "enrichment"
         logger.info("Enrichment stage starting")
-        enriched_records = enrich(transformed_records)
+        enriched_records = enrich()  # enrich the un-enriched ones
         result_counts["enrichment"] = len(enriched_records)
         logger.info("Enrichment stage complete")
 

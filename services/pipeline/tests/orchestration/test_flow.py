@@ -37,7 +37,7 @@ class ExtractedRecords:
 
 
 # pytest built-in fixtures:
-# monkeypatch > temporarily replace dependencies > test flow logic (not dependency behavior)
+# monkeypatch > temporarily replace dependencies to test flow logic (not dependency behavior)
 # caplog > capture Python's logging output for duration of test
 
 
@@ -47,7 +47,13 @@ def prepare_flow(monkeypatch):
         flow_module, "extract_city", lambda city_name, city: ExtractedRecords()
     )
     monkeypatch.setattr(flow_module, "load_records", lambda records: len(records))
-    monkeypatch.setattr(flow_module, "enrich_records", lambda records: records)
+    monkeypatch.setattr(flow_module, "load_gold", lambda: None)
+    monkeypatch.setattr(flow_module, "load_insight", lambda: None)
+    monkeypatch.setattr(
+        flow_module,
+        "run_enrichment",
+        lambda client, **kwargs: [{"city": "Test City"}],
+    )
 
 
 def test_pipeline_succeeds(monkeypatch):
