@@ -1,23 +1,6 @@
-import os
 from datetime import datetime, timezone
 
-from dotenv import load_dotenv
-from supabase import create_client
-
-load_dotenv()
-
-_client = None
-
-
-def _connect():
-    global _client
-    if _client is None:
-        url = os.environ.get("SUPABASE_URL")
-        key = os.environ.get("SUPABASE_KEY")
-        if not url or not key:
-            raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set. Check .env.")
-        _client = create_client(url, key)
-    return _client
+from pipeline.db import get_supabase_client
 
 
 def _now():
@@ -27,7 +10,7 @@ def _now():
 def start_run(run_mode=None, window_start=None, window_end=None):
     """Open a run record. Returns the run_id the database assigned."""
     response = (
-        _connect()
+        get_supabase_client()
         .table("pipeline_runs")
         .insert({"status": "running", "started_at": _now(), "run_mode": run_mode, "window_start": window_start, "window_end": window_end})
         .execute()
@@ -37,7 +20,7 @@ def start_run(run_mode=None, window_start=None, window_end=None):
 # get most recent successful backfill or incremental run
 def get_last_successful_run():
     response = (
-        _connect()
+        get_supabase_client()
         .table("pipeline_runs")
         .select("run_id, run_mode, window_start, window_end, ended_at")
         .eq("status", "success")
@@ -61,7 +44,7 @@ def fail_run(run_id, error, rows_extracted=None, rows_loaded=None, rows_transfor
 
 def _close(run_id, status, rows_extracted, rows_loaded, rows_transformed, error_message):
     response = (
-        _connect()
+        get_supabase_client()
         .table("pipeline_runs")
         .update(
             {

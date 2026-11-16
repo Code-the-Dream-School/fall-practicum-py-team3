@@ -1,16 +1,12 @@
 import pandas as pd
-import os
-from dotenv import load_dotenv
-from supabase import create_client
+from pipeline.db import get_supabase_client
 
-load_dotenv()
-supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
-
-response = (
-    supabase.table("daily_insight").select("*").execute()
-)
 
 def insight_to_dashboard():
+    supabase = get_supabase_client()
+    response = (
+        supabase.table("daily_insight").select("*").execute()
+    )
     data = response.data
     df = pd.DataFrame(data)
    
