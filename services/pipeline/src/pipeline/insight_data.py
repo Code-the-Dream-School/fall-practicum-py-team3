@@ -1,3 +1,6 @@
+from pipeline.extract.extract import CITIES
+
+
 ##Retrieve gold data for LLM insights.
 
 PAGE_SIZE = 1000 
@@ -15,17 +18,32 @@ def _apply_filters(query, city, start, end):
         query = query.lte("timestamp", end)
     return query.order("city").order("timestamp")
 
-
 def _fetch_all(client, table, city, start, end):
-    rows, offset = [], 0
-    while True:
-        query = _apply_filters(client.table(table).select("*"), city, start, end)
-        batch = query.range(offset, offset + PAGE_SIZE - 1).execute().data or []
-        rows.extend(batch)
-        if len(batch) < PAGE_SIZE:
-            return rows
-        offset += PAGE_SIZE
+    # one city at a time, walking forward by timestamp. No OFFSET.
+    names = [city] if city else list(CITIES)
+    rows = []
 
+    for name in names:
+        cursor = None
+        while True:
+            query = _apply_filters(
+                client.table(table).select("*"), name, start, end
+            ).limit(PAGE_SIZE)
+            # after the first page, pick up just past the last row we saw
+            if cursor is not None:
+                query = query.gt("timestamp", cursor)
+
+            batch = query.execute().data or []
+            if not batch:
+                break
+
+            rows.extend(batch)
+            cursor = batch[-1]["timestamp"]
+
+            if len(batch) < PAGE_SIZE:
+                break
+
+    return rows
 
 def get_gold_records(client, city=None, start=None, end=None):
     """All gold rows, optionally filtered by city and a timestamp range."""
