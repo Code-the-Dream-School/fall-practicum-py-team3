@@ -1,9 +1,20 @@
 import pandas as pd
+import pytest
 import pipeline.load.load_insight as load_module
+import pipeline.run_tracking as run_tracking
+
+
+@pytest.fixture(autouse=True)
+def _fake_supabase(monkeypatch):
+    fake = FakeSupabase()
+    monkeypatch.setattr(load_module, "get_supabase_client", lambda: fake)
+    monkeypatch.setattr(run_tracking, "get_supabase_client", lambda: fake)
+    return fake
 
 class FakeSupabase:
     def __init__(self):
         self.batches = []
+        self.data = [{"run_id": 1}]
         
     def table(self, table_name):
         self.table_name = table_name
@@ -11,6 +22,15 @@ class FakeSupabase:
     
     def upsert(self, records, on_conflict):
         self.batches.append(records)
+        return self
+    
+    def insert(self, record):
+        return self
+    
+    def update(self, record):
+        return self
+    
+    def eq(self, column, value):
         return self
     
     def execute(self):
@@ -32,10 +52,9 @@ def make_records(hours, date="2026-10-15"):
 
 # ==============================================
 # TEST 1: empty records
-def test_empty_gold_records(monkeypatch):
-    fake_supabase = FakeSupabase()
+def test_empty_gold_records(monkeypatch, _fake_supabase):
+    fake_supabase = _fake_supabase
     
-    monkeypatch.setattr(load_module, "supabase", fake_supabase)
     monkeypatch.setattr(
         load_module, "get_gold_records", lambda client: []
     )
@@ -46,11 +65,10 @@ def test_empty_gold_records(monkeypatch):
     
 # ==============================================
 # TEST 2: skip days with less than 18 hours
-def test_skips_days_with_less_than_18_hours(monkeypatch):
-    fake_supabase = FakeSupabase()
+def test_skips_days_with_less_than_18_hours(monkeypatch, _fake_supabase):
+    fake_supabase = _fake_supabase
     records = make_records(17)
     
-    monkeypatch.setattr(load_module, "supabase", fake_supabase)
     monkeypatch.setattr(
         load_module, "get_gold_records", lambda client: records
     )
@@ -61,14 +79,13 @@ def test_skips_days_with_less_than_18_hours(monkeypatch):
     
 # ==============================================
 # TEST 3: latest record and aqi as integer
-def test_uses_latest_record(monkeypatch):
-    fake_supabase = FakeSupabase()
+def test_uses_latest_record(monkeypatch, _fake_supabase):
+    fake_supabase = _fake_supabase
     records = make_records(18)
     
     records[-1]["category"] = "Very Poor"
     records[-1]["aqi_24h_avg"] = 4.6
     
-    monkeypatch.setattr(load_module, "supabase", fake_supabase)
     monkeypatch.setattr(
         load_module, "get_gold_records", lambda client: records
     )

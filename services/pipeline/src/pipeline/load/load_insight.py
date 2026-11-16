@@ -1,10 +1,11 @@
 import pandas as pd
 
 from pipeline.insight_data import get_gold_records
-from pipeline.load.load import supabase
+from pipeline.load.load import get_supabase_client
 from pipeline.run_tracking import start_run, finish_run, fail_run
 
 def load_insight():
+    supabase = get_supabase_client()
     run_id = start_run()
     rows_extracted = 0
     rows_transformed = 0
@@ -50,14 +51,14 @@ def load_insight():
             latest_record = group.loc[group["_timestamp"].idxmax()]
             
             # use its rolling 24hr aqi avg
-            # daily_average = int(round(latest_record["aqi_24h_avg"]))
+            daily_average = int(round(latest_record["aqi_24h_avg"]))
             
             daily_records.append({
                 "city": city,
                 "timestamp": latest_record["timestamp"],
                 "date": date.isoformat(),
                 "category": latest_record["category"],
-                "aqi_24h_avg": latest_record["aqi_24h_avg"]
+                "aqi_24h_avg": daily_average
             })
             
         rows_transformed = len(daily_records)

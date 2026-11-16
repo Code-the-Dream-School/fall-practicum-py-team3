@@ -1,25 +1,17 @@
-from supabase import create_client
-
 from pipeline.log import get_logger
 
 logger = get_logger(__name__)
 import data_contracts.schemas as schemas
+from pipeline.db import get_supabase_client
+from pipeline.config import settings
+
 from pipeline.extract.extract import extract as ext, City, CITIES, get_incremental_window, extract_incremental_window
 from pipeline.run_tracking import start_run, finish_run, fail_run
 from datetime import datetime, timezone
-from pipeline.config import settings
-
-
-supabase = (
-    create_client(settings.supabase_url, settings.supabase_key)
-    if settings.supabase_url and settings.supabase_key
-    else None
-)
 
 # Load raw data to db
 def load_raw(ext):
-    if supabase is None:
-        raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set. Check .env.")
+    supabase = get_supabase_client()
     try:
         # Records are unique by city and timestamp.
         # Upsert updates existing records instead of creating duplicates.

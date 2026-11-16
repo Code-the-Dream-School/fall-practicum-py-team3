@@ -1,5 +1,5 @@
 from pipeline.transform.transform import REQUIRED, transform
-from pipeline.load.load import supabase
+from pipeline.db import get_supabase_client
 from pipeline.run_tracking import start_run, finish_run, fail_run
 
 
@@ -8,6 +8,7 @@ def load_gold():
     rows_extracted = 0
     rows_transformed = 0
     rows_loaded = 0
+    supabase = get_supabase_client()
     
     try:
         # supabase only does 1000 records; so using batches

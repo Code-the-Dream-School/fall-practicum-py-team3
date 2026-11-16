@@ -1,4 +1,4 @@
-from pipeline.load.load import supabase
+from pipeline.db import get_supabase_client
 from pipeline.transform.transform import aqi_category
 from pipeline.run_tracking import start_run, finish_run, fail_run
 import json
@@ -249,6 +249,6 @@ def run_enrichment(client, batch_size=25, limit=None):
         raise
 
 if __name__ == "__main__":
-    run_enrichment(supabase, batch_size=25, limit=None)
+    run_enrichment(get_supabase_client(), batch_size=25, limit=None)
     
     
