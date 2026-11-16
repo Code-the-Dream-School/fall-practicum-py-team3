@@ -1,7 +1,7 @@
 from pipeline.transform.transform import REQUIRED, transform
 from pipeline.db import get_supabase_client
 from pipeline.run_tracking import start_run, finish_run, fail_run
-
+from pipeline.extract.extract import CITIES
 
 def load_gold():
     run_id = start_run()
@@ -11,31 +11,41 @@ def load_gold():
     supabase = get_supabase_client()
     
     try:
-        # supabase only does 1000 records; so using batches
+         # Pull one city at a time, walking forward by timestamp.
+        # No OFFSET, so Postgres never skips rows and every page is an index lookup.
         raw_records = []
-        start = 0
-        batch_size = 1000
-        
-        while True:
-            response = (
-                supabase.table("raw_air_quality")
-                .select("*")
-                .order("city")
-                .order("timestamp")
-                .range(start, start + batch_size -1)
-                .execute()
-            )
-        
-            batch = response.data or []
-            raw_records.extend(batch)
-            
-            rows_extracted += len(batch)
-        
-            if len(batch) < batch_size:
-                break
-        
-            start += batch_size
-            
+        page_size = 1000
+
+        for city in CITIES:
+            before = len(raw_records)
+            cursor = None
+
+            while True:
+                query = (
+                    supabase.table("raw_air_quality")
+                    .select("*")
+                    .eq("city", city)
+                    .order("timestamp")
+                    .limit(page_size)
+                )
+                # after the first page, pick up just past the last row we saw
+                if cursor is not None:
+                    query = query.gt("timestamp", cursor)
+
+                batch = query.execute().data or []
+                if not batch:
+                    break
+
+                raw_records.extend(batch)
+                rows_extracted += len(batch)
+                cursor = batch[-1]["timestamp"]
+
+                if len(batch) < page_size:
+                    break
+
+            # no rows for a city usually means the name here doesn't match the table
+            if len(raw_records) == before:
+                print(f"WARNING: no raw rows found for '{city}'")            
         print(f"Fetched {len(raw_records)} raw records.")
 
         # transform rejects the whole batch if any row is missing a required
