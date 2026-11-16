@@ -23,8 +23,6 @@ from pipeline.enrichment.enrichment import run_enrichment
 from pipeline.load.load import load_raw, supabase
 from pipeline.load.load_gold import load_gold
 from pipeline.load.load_insight import load_insight
-from pipeline.transform.transform import transform as transform_records
-from schemas import GoldAirQuality
 
 RAW_DIR = PIPELINE_SRC / "pipeline" / "extract" / "cities_raw"
 
@@ -70,15 +68,9 @@ def load_records(records: list[dict]) -> int:
 
 
 # ---------------------------------------------------------------------------- #
-@task
-def transform(records: list[dict]) -> list[GoldAirQuality]:
-    return transform_records(records)
-
-
-# ---------------------------------------------------------------------------- #
 @task(retries=2, retry_delay_seconds=5)
 def publish_gold_and_insights() -> None:
-    load_gold()
+    load_gold()  # includes transform step
     load_insight()
 
 
@@ -98,7 +90,7 @@ def run_pipeline(
     end: int = END,
 ) -> dict:
     logger = get_run_logger()
-    result_counts = {"extract": 0, "load": 0, "transform": 0, "enrichment": 0}
+    result_counts = {"extract": 0, "load": 0, "enrichment": 0}
     stage = "configuration"
 
     try:
@@ -148,18 +140,12 @@ def run_pipeline(
         logger.info("Load stage complete")
 
         # ---------------------------------------------------------------------------- #
-        stage = "transform"
-        logger.info("Transform stage starting")
-        transformed_records = transform(raw_records)
-        result_counts["transform"] = len(transformed_records)
-        logger.info("Transform stage complete")
-
-        # ---------------------------------------------------------------------------- #
         stage = "publish_gold_and_insights"
         logger.info("Publish gold and insights stage starting")
         publish_gold_and_insights()  # so daily_insight has rows
         logger.info("Publish gold and insights stage complete")
 
+        # ---------------------------------------------------------------------------- #
         stage = "enrichment"
         logger.info("Enrichment stage starting")
         enriched_records = enrich()  # enrich the un-enriched ones

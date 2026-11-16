@@ -69,19 +69,19 @@ def test_pipeline_succeeds(monkeypatch):
     assert result == {
         "status": "success",
         "mode": "test",
-        "counts": {"extract": 1, "load": 1, "transform": 1, "enrichment": 1},
+        "counts": {"extract": 1, "load": 1, "enrichment": 1},
     }
 
 
 def test_pipeline_reports_failure(monkeypatch, caplog):
     prepare_flow(monkeypatch)
 
-    def fail_transform(records):
-        raise ValueError("transform rejected invalid records")
+    def fail_enrichment(client, **kwargs):
+        raise ValueError("enrichment failed")
 
-    monkeypatch.setattr(flow_module, "transform_records", fail_transform)
+    monkeypatch.setattr(flow_module, "run_enrichment", fail_enrichment)
 
-    with pytest.raises(ValueError, match="transform rejected invalid records"):
+    with pytest.raises(ValueError, match="enrichment failed"):
         flow_module.run_pipeline(
             mode="test",
             inputs={"Test City": {"LAT": 38.9, "LON": -77.04}},
@@ -89,4 +89,4 @@ def test_pipeline_reports_failure(monkeypatch, caplog):
             end=2,
         )
 
-    assert "Pipeline failed during transform" in caplog.text
+    assert "Pipeline failed during enrichment" in caplog.text
