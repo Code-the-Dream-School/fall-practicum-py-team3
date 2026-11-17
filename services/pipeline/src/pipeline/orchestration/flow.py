@@ -1,14 +1,7 @@
 from __future__ import annotations
-import sys
-from pathlib import Path
 from typing import Mapping
 from prefect import flow, get_run_logger, task
-
-PROJECT_ROOT = Path(__file__).resolve().parents[5]
-PIPELINE_SRC = Path(__file__).resolve().parents[2]
-for path in (PROJECT_ROOT, PIPELINE_SRC):
-    if str(path) not in sys.path:
-        sys.path.insert(0, str(path))
+from pipeline.config import settings
 
 from pipeline.extract.extract import (
     CITIES,
@@ -25,6 +18,8 @@ from pipeline.load.load import load_raw
 from pipeline.load.load_gold import load_gold
 from pipeline.load.load_insight import load_insight
 
+PROJECT_ROOT = settings.model_config["env_file"].parent
+PIPELINE_SRC = PROJECT_ROOT / "services" / "pipeline" / "src"
 RAW_DIR = PIPELINE_SRC / "pipeline" / "extract" / "cities_raw"
 
 

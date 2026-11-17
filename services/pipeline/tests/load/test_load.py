@@ -1,16 +1,11 @@
 ﻿from datetime import datetime, timezone
-from pathlib import Path
-import sys
 import pytest
 import importlib
 from pydantic import ValidationError
+from pipeline.config import settings
 
 # ---------------------------------------------------------------------------- #
 # setup / sample data
-
-ROOT = Path(__file__).resolve().parents[4]
-sys.path.insert(0, str(ROOT / "data_contracts"))
-sys.path.insert(0, str(ROOT / "services" / "pipeline" / "src"))
 
 import pipeline
 from schemas import (

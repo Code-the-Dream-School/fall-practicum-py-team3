@@ -1,11 +1,8 @@
 import importlib.util
-from pathlib import Path
-import sys
 import pytest
+from pipeline.config import settings
 
-ROOT = Path(__file__).resolve().parents[4]
-sys.path.insert(0, str(ROOT / "services" / "pipeline" / "src"))
-
+ROOT = settings.model_config["env_file"].parent
 FLOW_PATH = (
     ROOT / "services" / "pipeline" / "src" / "pipeline" / "orchestration" / "flow.py"
 )
