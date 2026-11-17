@@ -2,18 +2,39 @@ from pipeline.db import get_supabase_client
 from pipeline.transform.transform import aqi_category
 from pipeline.run_tracking import start_run, finish_run, fail_run
 import json
+import re
 from datetime import datetime, timezone
 
 from openai import OpenAI
 
 from pipeline.config import settings
 
-def fallback_template(record):  
+
+class LLMConfigError(RuntimeError):
+    """The LLM cannot be used at all (for example a missing key). Stops the whole run."""
+
+
+def fallback_template(record):
     category = aqi_category(round(record["aqi_24h_avg"]))
     return (
         f"{record['city']}'s air quality on {record['timestamp']} was {category}, "
         f"with a 24-hour average AQI of {record['aqi_24h_avg']}."
     )
+
+
+def check_record(record):
+    """Return a short reason if the record can't be enriched, otherwise None."""
+    if not record.get("city"):
+        return "missing city"
+
+    value = record.get("aqi_24h_avg")
+    if value is None:
+        return "missing aqi_24h_avg"
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value != value:
+        return "invalid aqi_24h_avg (not a number)"
+    if not 1 <= value <= 5:
+        return "invalid aqi_24h_avg (must be between 1 and 5)"
+    return None
 
 
 BLOCKLIST = [
@@ -22,12 +43,25 @@ BLOCKLIST = [
 ]
 
 
+def is_single_sentence(text):
+    # split where a sentence ends and a new capitalised sentence starts
+    parts = [p for p in re.split(r"(?<=[.!?])\s+(?=[A-Z])", text.strip()) if p]
+    return len(parts) == 1
+
+
 def is_usable_insight(text):
     if not text or not isinstance(text, str):
         return False
 
+    if not text.strip():
+        return False
+
     # 300 characters max
     if len(text) > 300:
+        return False
+
+    # the prompt asks for exactly one sentence
+    if not is_single_sentence(text):
         return False
 
     # reject words in the blocklist
@@ -35,7 +69,7 @@ def is_usable_insight(text):
     for word in BLOCKLIST:
         if word in lowered:
             return False
-        
+
     return True
 
 
@@ -82,7 +116,12 @@ FEW_SHOT_EXAMPLES = [
 
 def call_llm(record, client=None):
     if client is None:
-        client = OpenAI(api_key=settings.openai_api_key)
+        api_key = settings.openai_api_key
+        if not api_key:
+            raise LLMConfigError("OpenAI API key is not set. Check .env.")
+        # timeout and retries are handled by the client for temporary API problems
+        client = OpenAI(api_key=api_key, timeout=30.0, max_retries=2)
+
     facts = {
         "city": record["city"],
         "date": str(record["timestamp"])[:10],
@@ -91,7 +130,7 @@ def call_llm(record, client=None):
     }
 
     messages = [{"role": "system", "content": WRITER_PROMPT}]
-    
+
     for example_facts, example_text in FEW_SHOT_EXAMPLES:
         messages.append({"role": "user", "content": json.dumps(example_facts)})
         messages.append({"role": "assistant", "content": json.dumps({"insight_text": example_text})})
@@ -111,26 +150,41 @@ def enrich_record(record):
     if record.get("enriched_at"):
         return record
 
-    result = dict(record) 
+    result = dict(record)
+
+    # missing or invalid data: don't call the LLM, record why
+    problem = check_record(record)
+    if problem:
+        result["enriched_at"] = None
+        result["enrichment_error"] = problem
+        return result
+
     try:
         data = call_llm(record)
-        text = data.get("insight_text")
-
-        if is_usable_insight(text):
-            result["insight_source"] = "llm"
-            result["model"] = MODEL
-        else:           
-            text = fallback_template(record)
-            result["insight_source"] = "template"
-            result["model"] = None
-
-        result["insight_text"] = text
-        result["prompt_version"] = PROMPT_VERSION
-        result["enriched_at"] = datetime.now(timezone.utc).isoformat()
-        result["enrichment_error"] = None    #clear any previous error if enrichment succeeds
+    except LLMConfigError:
+        raise  # nothing can be enriched, so stop the run with a clear message
+    except json.JSONDecodeError:
+        data = None  # the reply wasn't valid JSON: handled as an invalid response below
     except Exception as e:
+        # API failure (timeout, rate limit, network): leave it for the next run
         result["enriched_at"] = None
         result["enrichment_error"] = str(e)
+        return result
+
+    text = data.get("insight_text") if isinstance(data, dict) else None
+
+    if is_usable_insight(text):
+        result["insight_source"] = "llm"
+        result["model"] = MODEL
+    else:
+        text = fallback_template(record)
+        result["insight_source"] = "template"
+        result["model"] = None
+
+    result["insight_text"] = text
+    result["prompt_version"] = PROMPT_VERSION
+    result["enriched_at"] = datetime.now(timezone.utc).isoformat()
+    result["enrichment_error"] = None    #clear any previous error if enrichment succeeds
 
     return result
 
@@ -138,14 +192,26 @@ def enrich_record(record):
 
 def enrich_records(records):
     # run enrich_record on every record in the list
-    return [enrich_record(r) for r in records]
+    results = []
+    for r in records:
+        try:
+            results.append(enrich_record(r))
+        except LLMConfigError:
+            raise
+        except Exception as e:
+            # last safety net: one bad record never stops the batch
+            failed = dict(r)
+            failed["enriched_at"] = None
+            failed["enrichment_error"] = f"unexpected error: {e}"
+            results.append(failed)
+    return results
 
 
 # unenriched
 def get_unenriched_records(client, limit=None):
     rows = []
     offset = 0
-    
+
     while True:
         page = (
             client.table("daily_insight")
@@ -157,21 +223,21 @@ def get_unenriched_records(client, limit=None):
             .execute()
             .data or []
         )
-        
+
         if limit is not None:
             remaining = limit - len(rows)
             page = page[:remaining]
-            
+
         rows.extend(page)
-        
+
         if limit is not None and len(rows) >= limit:
             break
-        
+
         if len(page) < PAGE_SIZE:
             break
-        
+
         offset += PAGE_SIZE
-        
+
     return rows
 
 
@@ -181,7 +247,7 @@ def run_enrichment(client, batch_size=25, limit=None):
     rows_extracted = 0
     rows_transformed = 0
     rows_loaded = 0
-    
+
     try:
         # read only rows that haven't been enriched yet (this is what makes reruns safe)
         # query = (
@@ -192,11 +258,11 @@ def run_enrichment(client, batch_size=25, limit=None):
         # if limit:
         #     query = query.limit(limit)  # small test runs
         # rows = query.execute().data
-        
-        
+
+
         rows = get_unenriched_records(client, limit)
-        
-        # pipeline runs 
+
+        # pipeline runs
         rows_extracted = len(rows)
 
         if not rows:
@@ -215,21 +281,23 @@ def run_enrichment(client, batch_size=25, limit=None):
             batch = rows[start:start + batch_size]
             batch_results = enrich_records(batch)
             results.extend(batch_results)
-            
+
             rows_transformed += len(batch_results)
-            
+
             # save enriched results to supabase
             client.table("daily_insight").upsert(
                 batch_results,
                 on_conflict="city,timestamp"
             ).execute()
-            
+
             rows_loaded += len(batch_results)
-            
+
             print(f"Enriched {len(results)} of {len(rows)}")
-            
+
         failed = [r for r in results if r.get("enrichment_error")]
         print(f"Enriched {len(results) - len(failed)}, failed {len(failed)}.")
+        for r in failed[:10]:  # show the first few reasons
+            print(f"  {r.get('city')} {r.get('timestamp')}: {r['enrichment_error']}")
         finish_run(
             run_id,
             rows_extracted=rows_extracted,
@@ -237,7 +305,7 @@ def run_enrichment(client, batch_size=25, limit=None):
             rows_loaded=rows_loaded,
         )
         return results
-    
+
     except Exception as error:
         fail_run(
             run_id,
@@ -250,5 +318,3 @@ def run_enrichment(client, batch_size=25, limit=None):
 
 if __name__ == "__main__":
     run_enrichment(get_supabase_client(), batch_size=25, limit=None)
-    
-    
