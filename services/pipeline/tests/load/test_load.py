@@ -204,7 +204,7 @@ def test_load_empty_list_inserts_nothing(raw_loader):
     load_raw([])
 
     assert client.records == {}
-    assert client.upsert_calls == [([], "city,timestamp")]
+    assert client.upsert_calls == []
 
 
 # ---------------------------------------------------------------------------- #
