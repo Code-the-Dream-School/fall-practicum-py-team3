@@ -121,8 +121,8 @@ More precisely, an operation is idempotent if performing it many times produces 
 The same idea in code:
 
 ```python
-balance = 100      # idempotent: run it 5 times, balance is still 100
-balance += 100     # NOT idempotent: starting at 100, run it 5 times, balance is 600
+balance = 100  # idempotent: run it 5 times, balance is still 100
+balance += 100  # NOT idempotent: starting at 100, run it 5 times, balance is 600
 ```
 
 The first line **sets** the state to a specific value. The second **changes** the state relative to its current value. Operations that set a known end state are safe to repeat. Operations that build on the current state need protection.

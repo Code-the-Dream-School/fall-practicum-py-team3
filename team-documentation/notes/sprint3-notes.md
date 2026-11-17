@@ -64,7 +64,8 @@ Write one loading function that accepts a **start time** and an **end time**. Th
 def load_weather(start_time, end_time):
     """Load data where start_time <= observed_at < end_time."""
     data = fetch_weather_api(start_time, end_time)
-    save_to_database(data)   # must be idempotent (Sprint 2)
+    save_to_database(data)  # must be idempotent (Sprint 2)
+
 
 # Incremental: runs on a schedule, e.g. every hour.
 # Use clean hour boundaries so consecutive runs line up exactly.
@@ -72,7 +73,7 @@ load_weather(start_time="2026-11-10 08:00", end_time="2026-11-10 09:00")
 load_weather(start_time="2026-11-10 09:00", end_time="2026-11-10 10:00")
 
 # Backfill: run once (or whenever you need history)
-load_weather(start_time="2025-01-01", end_time="2026-01-01")   # all of 2025
+load_weather(start_time="2025-01-01", end_time="2026-01-01")  # all of 2025
 ```
 
 This is pseudocode; the details will vary with your project.

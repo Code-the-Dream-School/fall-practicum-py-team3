@@ -1,13 +1,21 @@
 import pytest
 from pydantic import ValidationError
 
-from data_contracts.schemas import AirQualityResponse
+from pipeline.data_contracts.schemas import AirQualityResponse
 
 REC = {
     "dt": 1606482000,
     "main": {"aqi": 2},
-    "components": {"co": 270.367, "no": 5.867, "no2": 0.5, "o3": 4.783,
-                   "so2": 14.544, "pm2_5": 13.448, "pm10": 15.524, "nh3": 0.289},
+    "components": {
+        "co": 270.367,
+        "no": 5.867,
+        "no2": 0.5,
+        "o3": 4.783,
+        "so2": 14.544,
+        "pm2_5": 13.448,
+        "pm10": 15.524,
+        "nh3": 0.289,
+    },
 }
 
 
@@ -29,5 +37,4 @@ def test_wrong_type_rejected():
 
 
 def test_real_api_coord_shape():
-    AirQualityResponse.model_validate(
-        {"coord": {"lon": -77.04, "lat": 38.9}, "list": [REC]})
+    AirQualityResponse.model_validate({"coord": {"lon": -77.04, "lat": 38.9}, "list": [REC]})

@@ -1,9 +1,8 @@
 import os
-from pathlib import Path
 
 import pytest
 
-from pipeline.config import Settings, PROJECT_ROOT
+from pipeline.config import PROJECT_ROOT, Settings
 
 ENV_EXAMPLE = PROJECT_ROOT / ".env.example"
 

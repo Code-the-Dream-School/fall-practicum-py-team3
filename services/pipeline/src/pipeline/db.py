@@ -1,8 +1,7 @@
 """Shared Supabase client creation."""
 
-from supabase import create_client
-
 from pipeline.config import settings
+from supabase import create_client
 
 _client = None
 
@@ -14,5 +13,3 @@ def get_supabase_client():
             raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set. Check .env.")
         _client = create_client(settings.supabase_url, settings.supabase_key)
     return _client
-
-

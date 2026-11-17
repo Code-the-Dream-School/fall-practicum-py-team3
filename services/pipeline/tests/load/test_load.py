@@ -1,4 +1,5 @@
-﻿from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 import pytest
 import importlib
 from pydantic import ValidationError
@@ -6,9 +7,8 @@ from pipeline.config import settings
 
 # ---------------------------------------------------------------------------- #
 # setup / sample data
-
 import pipeline
-from data_contracts.schemas import (
+from pipeline.data_contracts.schemas import (
     AirQualityRecord,
     AirQualityResponse,
     Components,
@@ -58,12 +58,8 @@ def make_record(dt=DT_1, aqi=2, **overrides) -> AirQualityRecord:
 def make_raw(records) -> RawAirQuality:
     return RawAirQuality(
         retrieved_at=datetime(2020, 12, 1, 12, 0),
-        request_parameters=RequestParameters(
-            lat=38.90, lon=-77.04, start=1606488670, end=1606747870
-        ),
-        payload=AirQualityResponse(
-            coord=Coordinates(lat=38.90, lon=-77.04), list=records
-        ),
+        request_parameters=RequestParameters(lat=38.90, lon=-77.04, start=1606488670, end=1606747870),
+        payload=AirQualityResponse(coord=Coordinates(lat=38.90, lon=-77.04), list=records),
     )
 
 
@@ -131,7 +127,7 @@ def test_transform_output_contract(raw_two_records):
     # check first record > second is distinct >  values are not mixed up between rows
     first, second = result
     assert first.city == CITY
-    assert first.timestamp == datetime(2020, 11, 27, 13, 0, tzinfo=timezone.utc)
+    assert first.timestamp == datetime(2020, 11, 27, 13, 0, tzinfo=UTC)
     assert first.aqi == 2
     assert (first.co, first.no, first.no2, first.o3) == (270.367, 5.867, 43.184, 4.783)
     assert (first.so2, first.pm2_5, first.pm10, first.nh3) == (
@@ -140,7 +136,7 @@ def test_transform_output_contract(raw_two_records):
         15.524,
         0.289,
     )
-    assert second.timestamp == datetime(2020, 11, 27, 14, 0, tzinfo=timezone.utc)
+    assert second.timestamp == datetime(2020, 11, 27, 14, 0, tzinfo=UTC)
     assert second.aqi == 3
     assert second.pm2_5 == 30.0
 
@@ -224,9 +220,7 @@ def test_raw_schema_rejects_malformed_types():
 @requires_transform
 def test_transform_rejects_record_with_missing_aqi():
     # create raw record with `aqi=None`, but Gold requires an `int`
-    raw = make_raw(
-        [AirQualityRecord(dt=DT_1, main=Main(aqi=None), components=Components(co=1.0))]
-    )
+    raw = make_raw([AirQualityRecord(dt=DT_1, main=Main(aqi=None), components=Components(co=1.0))])
     with pytest.raises(ValueError):
         transform(raw, CITY)
 
@@ -291,33 +285,51 @@ def test_transform_preserves_boundary_scores(aqi):
 @requires_transform
 def test_rolling_average_of_aqi():
     import pandas as pd
-    
-    raw = pd.DataFrame([
-        {
-            "city": CITY, 
-            "timestamp": "2020-11-27T00:00+00:00", 
-            "aqi": 2,
-            "co": 300.0, "no": 1.0, "no2": 5.0, "o3": 40.0,
-            "so2": 2.0, "pm2_5": 10.0, "pm10": 15.0, "nh3": 1.0,
-        },
-        
-        {
-            "city": CITY, 
-            "timestamp": "2020-11-27T01:00+00:00",
-            "aqi": 4,
-            "co": 300.0, "no": 1.0, "no2": 5.0, "o3": 40.0,
-            "so2": 2.0, "pm2_5": 10.0, "pm10": 15.0, "nh3": 1.0,
-        },
-        
-        {
-            "city": CITY, 
-            "timestamp": "2020-11-27T02:00+00:00", 
-            "aqi": 2,
-            "co": 300.0, "no": 1.0, "no2": 5.0, "o3": 40.0,
-            "so2": 2.0, "pm2_5": 10.0, "pm10": 15.0, "nh3": 1.0,
-        },
-    ])
-    
+
+    raw = pd.DataFrame(
+        [
+            {
+                "city": CITY,
+                "timestamp": "2020-11-27T00:00+00:00",
+                "aqi": 2,
+                "co": 300.0,
+                "no": 1.0,
+                "no2": 5.0,
+                "o3": 40.0,
+                "so2": 2.0,
+                "pm2_5": 10.0,
+                "pm10": 15.0,
+                "nh3": 1.0,
+            },
+            {
+                "city": CITY,
+                "timestamp": "2020-11-27T01:00+00:00",
+                "aqi": 4,
+                "co": 300.0,
+                "no": 1.0,
+                "no2": 5.0,
+                "o3": 40.0,
+                "so2": 2.0,
+                "pm2_5": 10.0,
+                "pm10": 15.0,
+                "nh3": 1.0,
+            },
+            {
+                "city": CITY,
+                "timestamp": "2020-11-27T02:00+00:00",
+                "aqi": 2,
+                "co": 300.0,
+                "no": 1.0,
+                "no2": 5.0,
+                "o3": 40.0,
+                "so2": 2.0,
+                "pm2_5": 10.0,
+                "pm10": 15.0,
+                "nh3": 1.0,
+            },
+        ]
+    )
+
     result = transform(raw)
 
     assert [row.aqi_24h_avg for row in result] == [2.0, 3.0, 8 / 3]
@@ -329,30 +341,40 @@ def db_row(timestamp, aqi, city=CITY):
         "city": city,
         "timestamp": timestamp,
         "aqi": aqi,
-        "co": 300.0, "no": 1.0, "no2": 5.0, "o3": 40.0,
-        "so2": 2.0, "pm2_5": 5.0, "pm10": 15.0, "nh3": 1.0,
+        "co": 300.0,
+        "no": 1.0,
+        "no2": 5.0,
+        "o3": 40.0,
+        "so2": 2.0,
+        "pm2_5": 5.0,
+        "pm10": 15.0,
+        "nh3": 1.0,
     }
 
 
 @requires_transform
 def test_rolling_window_drops_readings_older_than_24_hours():
     # 25 hours apart, so the first reading is outside the second one's window.
-    result = transform([
-        db_row("2020-11-27T00:00+00:00", aqi=5),
-        db_row("2020-11-28T01:00+00:00", aqi=1),
-    ])
+    result = transform(
+        [
+            db_row("2020-11-27T00:00+00:00", aqi=5),
+            db_row("2020-11-28T01:00+00:00", aqi=1),
+        ]
+    )
 
     assert [row.aqi_24h_avg for row in result] == [5.0, 1.0]
 
 
 @requires_transform
 def test_rolling_window_keeps_cities_separate():
-    result = transform([
-        db_row("2020-11-27T00:00+00:00", aqi=1, city="Boston"),
-        db_row("2020-11-27T01:00+00:00", aqi=1, city="Boston"),
-        db_row("2020-11-27T00:00+00:00", aqi=5, city="Houston"),
-        db_row("2020-11-27T01:00+00:00", aqi=5, city="Houston"),
-    ])
+    result = transform(
+        [
+            db_row("2020-11-27T00:00+00:00", aqi=1, city="Boston"),
+            db_row("2020-11-27T01:00+00:00", aqi=1, city="Boston"),
+            db_row("2020-11-27T00:00+00:00", aqi=5, city="Houston"),
+            db_row("2020-11-27T01:00+00:00", aqi=5, city="Houston"),
+        ]
+    )
 
     latest = {row.city: row.aqi_24h_avg for row in result}
     assert latest == {"Boston": 1.0, "Houston": 5.0}
@@ -365,11 +387,13 @@ def test_rolling_window_keeps_cities_separate():
 @requires_transform
 def test_score_whole_number_matches_aqi():
     # Ozone is the worst pollutant in both rows; it crosses from Good to Fair at 60.
-    clean = dict(co=100.0, no2=5.0, so2=1.0, pm2_5=1.0, pm10=1.0)
-    raw = make_raw([
-        make_record(DT_1, aqi=1, o3=57.5, **clean),
-        make_record(DT_2, aqi=2, o3=60.5, **clean),
-    ])
+    clean = {"co": 100.0, "no2": 5.0, "so2": 1.0, "pm2_5": 1.0, "pm10": 1.0}
+    raw = make_raw(
+        [
+            make_record(DT_1, aqi=1, o3=57.5, **clean),
+            make_record(DT_2, aqi=2, o3=60.5, **clean),
+        ]
+    )
 
     good, fair = transform(raw, CITY)
 
@@ -382,11 +406,13 @@ def test_score_whole_number_matches_aqi():
 def test_score_on_a_band_edge_stays_in_the_lower_level():
     # OpenWeather counts a value exactly on a cutoff as the lower level:
     # ozone at 60 is still Good, and at 100 it is still Fair.
-    clean = dict(co=100.0, no2=5.0, so2=1.0, pm2_5=1.0, pm10=1.0)
-    raw = make_raw([
-        make_record(DT_1, aqi=1, o3=60.0, **clean),
-        make_record(DT_2, aqi=2, o3=100.0, **clean),
-    ])
+    clean = {"co": 100.0, "no2": 5.0, "so2": 1.0, "pm2_5": 1.0, "pm10": 1.0}
+    raw = make_raw(
+        [
+            make_record(DT_1, aqi=1, o3=60.0, **clean),
+            make_record(DT_2, aqi=2, o3=100.0, **clean),
+        ]
+    )
 
     good, fair = transform(raw, CITY)
 
@@ -397,11 +423,13 @@ def test_score_on_a_band_edge_stays_in_the_lower_level():
 def test_score_follows_openweather_when_a_reading_sits_on_a_cutoff():
     # OpenWeather rounds before sending, so ozone shown as 60.0 can be Good or
     # Fair. The score follows whichever level OpenWeather assigned.
-    clean = dict(co=100.0, no2=5.0, so2=1.0, pm2_5=1.0, pm10=1.0)
-    raw = make_raw([
-        make_record(DT_1, aqi=1, o3=60.0, **clean),
-        make_record(DT_2, aqi=2, o3=60.0, **clean),
-    ])
+    clean = {"co": 100.0, "no2": 5.0, "so2": 1.0, "pm2_5": 1.0, "pm10": 1.0}
+    raw = make_raw(
+        [
+            make_record(DT_1, aqi=1, o3=60.0, **clean),
+            make_record(DT_2, aqi=2, o3=60.0, **clean),
+        ]
+    )
 
     good, fair = transform(raw, CITY)
 
@@ -411,9 +439,11 @@ def test_score_follows_openweather_when_a_reading_sits_on_a_cutoff():
 @requires_transform
 def test_score_stays_in_openweather_level_when_particles_read_zero():
     # Some hours report PM2.5 and PM10 as 0 while the AQI still counts them.
-    raw = make_raw([
-        make_record(aqi=3, co=380.0, no2=30.0, so2=2.0, o3=33.0, pm2_5=0.0, pm10=0.0),
-    ])
+    raw = make_raw(
+        [
+            make_record(aqi=3, co=380.0, no2=30.0, so2=2.0, o3=33.0, pm2_5=0.0, pm10=0.0),
+        ]
+    )
 
     (row,) = transform(raw, CITY)
 

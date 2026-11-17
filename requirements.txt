@@ -18,3 +18,4 @@ plotly>=5.22
 pytest>=8.2
 openai>=3.49.0
 supabase>=2.33.0
+ruff>=0.17.5

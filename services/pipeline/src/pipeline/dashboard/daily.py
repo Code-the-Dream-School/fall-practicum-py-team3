@@ -1,29 +1,31 @@
 import streamlit as st
-import pandas as pd
 from load_insight_dashboard import insight_to_dashboard as insight
 
+
 def align_content(day, date, aqi, category):
-    day_col, date_col, aqi_col, cat_col = st.columns([1,2,0.5,2])
+    day_col, date_col, aqi_col, cat_col = st.columns([1, 2, 0.5, 2])
 
     with day_col:
         st.markdown(str(day))
 
-    with date_col: 
+    with date_col:
         st.markdown(str(date))
-        
+
     with aqi_col:
         st.markdown(str(aqi))
-        
+
     with cat_col:
         st.markdown(str(category))
-         
-    
+
+
 def daily_summary():
     daily_df, city, date_df, category, days = insight()
-    chosen_city = st.selectbox("City",sorted(city.unique()),index=None, placeholder="Choose a city:", label_visibility="collapsed")
+    chosen_city = st.selectbox(
+        "City", sorted(city.unique()), index=None, placeholder="Choose a city:", label_visibility="collapsed"
+    )
 
     with st.container(border=True):
-        align_content("Daily","Date","AQI","Category")
+        align_content("Daily", "Date", "AQI", "Category")
 
     if chosen_city:
         selected_city = city == chosen_city
@@ -41,12 +43,7 @@ def daily_summary():
         records_container = st.container()
 
         # Pagination stays at the bottom
-        pages = st.pagination(
-            num_pages=total_pages,
-            max_visible_pages=10,
-            bind="query-params",
-            key="selected_page"
-        )
+        pages = st.pagination(num_pages=total_pages, max_visible_pages=10, bind="query-params", key="selected_page")
 
         start_idx = (pages - 1) * records_per_page
         end_idx = start_idx + records_per_page
@@ -57,7 +54,7 @@ def daily_summary():
                 new_days.iloc[start_idx:end_idx],
                 new_date.iloc[start_idx:end_idx],
                 new_daily.iloc[start_idx:end_idx],
-                new_cat.iloc[start_idx:end_idx]
+                new_cat.iloc[start_idx:end_idx],
             ):
                 with st.container(border=True):
                     align_content(day, date, daily, cat)

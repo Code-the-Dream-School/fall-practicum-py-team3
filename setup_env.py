@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Set up the dev environment.
 
@@ -50,6 +49,7 @@ def install_dependencies():
 
     print("Installing package in editable mode...")
     run(*pip, "install", "-e", str(ROOT))
+
 
 def ensure_env_file():
     env_file = ROOT / ".env"

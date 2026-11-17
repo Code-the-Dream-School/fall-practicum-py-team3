@@ -1,10 +1,9 @@
-﻿"""Transform raw OpenWeather air-quality readings into gold records."""
-
-from pathlib import Path
+"""Transform raw OpenWeather air-quality readings into gold records."""
 
 import pandas as pd
 
-import data_contracts.schemas as _schemas
+import pipeline.data_contracts.schemas as _schemas
+
 GoldAirQuality = _schemas.GoldAirQuality
 RawAirQuality = _schemas.RawAirQuality
 
@@ -87,9 +86,7 @@ def _reject_missing(frame):
 
 def _standardize(frame):
     frame = frame.copy()
-    frame["timestamp"] = pd.to_datetime(frame["timestamp"], utc=True).map(
-        lambda stamp: stamp.to_pydatetime()
-    )
+    frame["timestamp"] = pd.to_datetime(frame["timestamp"], utc=True).map(lambda stamp: stamp.to_pydatetime())
     frame["aqi"] = pd.to_numeric(frame["aqi"]).round().astype(int)
     for pollutant in POLLUTANTS:
         frame[pollutant] = pd.to_numeric(frame[pollutant]).astype(float)
@@ -121,6 +118,7 @@ def _derive(frame):
     score = sub_indices.max(axis=1).clip(lower=frame["aqi"], upper=frame["aqi"] + 0.99)
     frame["score"] = (score * 100).astype(int) / 100
     return frame
+
 
 def _sub_index(value, edges):
     """Level plus progress through it, e.g. 2.25 = a quarter of the way through Fair."""
