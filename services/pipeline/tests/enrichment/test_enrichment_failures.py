@@ -1,14 +1,9 @@
 import json
-import sys
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[4]
-sys.path.insert(0, str(ROOT / "services" / "pipeline" / "src"))
-
-from pipeline.enrichment import enrichment as en  
+from pipeline.enrichment import enrichment as en 
 
 GOOD_TEXT = "Boston's air was in the Fair range on November 5, with a 24-hour average AQI of 2.0."
 
