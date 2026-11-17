@@ -41,5 +41,8 @@ jobs:
       - name: Install dependencies
         run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
 
+      - name: Run Ruff
+        run: python -m ruff check . && python -m ruff format --check .
+
       - name: Run pipeline tests
         run: python -m pytest

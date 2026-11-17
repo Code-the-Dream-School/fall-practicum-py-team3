@@ -50,6 +50,9 @@ def install_dependencies():
     print("Installing package in editable mode...")
     run(*pip, "install", "-e", str(ROOT))
 
+    print("Installing pre-commit hooks...")
+    run(str(VENV_PYTHON), "-m", "pre_commit", "install", "--hook-type", "pre-push")
+
 
 def ensure_env_file():
     env_file = ROOT / ".env"

@@ -32,6 +32,6 @@ def test_env_example_matches_config_fields():
     example_keys = {k.lower() for k in _env_example_keys()}
     # pydantic-settings maps UPPER_SNAKE_CASE env keys to snake_case fields.
     field_names = {name.lower() for name in Settings.model_fields}
-    assert example_keys == field_names, (
-        f".env.example keys {sorted(example_keys)} != Settings fields {sorted(field_names)}"
-    )
+    assert (
+        example_keys == field_names
+    ), f".env.example keys {sorted(example_keys)} != Settings fields {sorted(field_names)}"
