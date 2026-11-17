@@ -252,3 +252,34 @@ def test_run_enrichment_with_missing_key_fails_the_run_and_saves_nothing(run_log
     assert "API key" in run_log.failed[0]
     assert run_log.finished is None
     assert client.saved == []
+    
+    
+# single-sentence check
+@pytest.mark.parametrize("text", [
+    "Boston was Fair.",
+    "Boston was Fair",
+    "Boston was Fair!  ",
+    "AQI was 2.0 in Boston.",
+    "Chicago in the U.S. Midwest was Fair.",
+    "St. Louis air was Fair.",
+    "Washington, D.C. was Fair today.",
+])
+def test_single_sentence_is_accepted(text):
+    assert en.is_single_sentence(text) is True
+
+
+@pytest.mark.parametrize("text", [
+    "Boston was Fair. Denver was Good.",
+    "Boston was Fair! It was calm.",
+    "Boston was Fair? Yes. Good air.",
+])
+def test_several_sentences_are_rejected(text):
+    assert en.is_single_sentence(text) is False
+
+
+def test_reply_with_an_abbreviation_is_used(monkeypatch):
+    text = "Air in the U.S. Northeast was Fair, with a 24-hour average AQI of 2.0."
+    monkeypatch.setattr(en, "call_llm", lambda record: {"insight_text": text})
+    result = en.enrich_record(make_record())
+    assert result["insight_source"] == "llm"
+    assert result["insight_text"] == text

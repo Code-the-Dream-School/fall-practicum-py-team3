@@ -9,6 +9,9 @@ from openai import OpenAI
 
 from pipeline.config import settings
 
+SENTENCE_BREAK_PATTERN = r"(?<=[.!?])\s+(?=[A-Z])"
+
+ABBREVIATION_PATTERN = r"\b(?:U\.S\.|U\.K\.|D\.C\.|St\.|Mt\.|Ft\.|Dr\.|No\.)"
 
 class LLMConfigError(RuntimeError):
     """The LLM cannot be used at all (for example a missing key). Stops the whole run."""
@@ -44,8 +47,8 @@ BLOCKLIST = [
 
 
 def is_single_sentence(text):
-    # split where a sentence ends and a new capitalised sentence starts
-    parts = [p for p in re.split(r"(?<=[.!?])\s+(?=[A-Z])", text.strip()) if p]
+    text = re.sub(ABBREVIATION_PATTERN, lambda m: m.group(0).replace(".", ""), text.strip())
+    parts = [p for p in re.split(SENTENCE_BREAK_PATTERN, text) if p.strip()]
     return len(parts) == 1
 
 
