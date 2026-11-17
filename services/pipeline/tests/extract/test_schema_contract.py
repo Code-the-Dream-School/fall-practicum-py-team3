@@ -1,12 +1,7 @@
-import sys
-from pathlib import Path
-
 import pytest
 from pydantic import ValidationError
 
-ROOT = Path(__file__).resolve().parents[4]
-sys.path.insert(0, str(ROOT / "data_contracts"))
-from schemas import AirQualityResponse
+from data_contracts.schemas import AirQualityResponse
 
 REC = {
     "dt": 1606482000,

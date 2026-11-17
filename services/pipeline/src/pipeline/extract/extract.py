@@ -4,20 +4,18 @@ from pydantic import BaseModel
 
 import yaml
 
-from pipeline.config import PROJECT_ROOT, settings
+from pipeline.config import settings
 import json
 
 from pipeline.log import get_logger
 
 logger = get_logger(__name__)
-import time 
-import sys
-from importlib import import_module
+import time
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "data_contracts"))
+
 from pipeline.run_tracking import start_run, finish_run, fail_run, get_last_successful_run
 
-_schemas = import_module("schemas")
+import data_contracts.schemas as _schemas
 RawAirQuality = _schemas.RawAirQuality
 RequestParameters = _schemas.RequestParameters
 
@@ -37,7 +35,7 @@ class City(BaseModel):
 # city = City(LAT=42.36,LON=-71.06,START=1760486400,END=1792108800)
 
 def _load_cities():
-    path = PROJECT_ROOT / "config" / "cities.yaml"
+    path = Path(__file__).resolve().parents[1] / "cities.yaml"
     data = yaml.safe_load(path.read_text())
     return {
         entry["name"]: {"LAT": entry["lat"], "LON": entry["lon"]}

@@ -48,6 +48,8 @@ def install_dependencies():
         print("Installing requirements...")
         run(*pip, "install", "-r", str(requirements))
 
+    print("Installing package in editable mode...")
+    run(*pip, "install", "-e", str(ROOT))
 
 def ensure_env_file():
     env_file = ROOT / ".env"

@@ -1,13 +1,10 @@
 ﻿"""Transform raw OpenWeather air-quality readings into gold records."""
 
-import sys
-from importlib import import_module
 from pathlib import Path
 
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[5] / "data_contracts"))
-_schemas = import_module("schemas")
+import data_contracts.schemas as _schemas
 GoldAirQuality = _schemas.GoldAirQuality
 RawAirQuality = _schemas.RawAirQuality
 

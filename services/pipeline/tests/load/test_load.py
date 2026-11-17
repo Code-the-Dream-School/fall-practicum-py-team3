@@ -8,7 +8,7 @@ from pipeline.config import settings
 # setup / sample data
 
 import pipeline
-from schemas import (
+from data_contracts.schemas import (
     AirQualityRecord,
     AirQualityResponse,
     Components,
