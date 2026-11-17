@@ -46,6 +46,7 @@ def prepare_flow(monkeypatch):
     monkeypatch.setattr(
         flow_module, "extract_city", lambda city_name, city: ExtractedRecords()
     )
+    monkeypatch.setattr(flow_module, "get_supabase_client", lambda: None)
     monkeypatch.setattr(flow_module, "load_records", lambda records: len(records))
     monkeypatch.setattr(flow_module, "load_gold", lambda: None)
     monkeypatch.setattr(flow_module, "load_insight", lambda: None)
