@@ -10,21 +10,23 @@ from pipeline.run_tracking import start_run, finish_run, fail_run
 from datetime import datetime, timezone
 
 # Load raw data to db
-def load_raw(ext):
+def load_raw(records):
     supabase = get_supabase_client()
     try:
-        # Records are unique by city and timestamp.
-        # Upsert updates existing records instead of creating duplicates.
-        response = (
-            supabase.table("raw_air_quality")
-            .upsert(ext, on_conflict="city,timestamp")
-            .select()
-            .execute()
-        )
-
-        logger.info("Upserted %s rows into raw_air_quality", len(response.data))
-        return len(response.data)
-
+        batch_size = 2000
+        total = len(records)
+        total_loaded = 0
+        for offset in range(0, total, batch_size):
+            batch = records[offset : offset + batch_size]
+            response = (
+                supabase.table("raw_air_quality")
+                .upsert(batch, on_conflict="city,timestamp")
+                .select()
+                .execute()
+            )
+            total_loaded += len(response.data)
+        logger.info("Upserted %s rows into raw_air_quality", total_loaded)
+        return total_loaded
     except Exception as error:
         logger.exception("Failed to load raw air quality records: %s", error)
         raise

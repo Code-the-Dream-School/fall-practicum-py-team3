@@ -20,7 +20,8 @@ from pipeline.extract.extract import (
     extract_all_windows,
 )
 from pipeline.enrichment.enrichment import run_enrichment
-from pipeline.load.load import load_raw, supabase
+from pipeline.db import get_supabase_client
+from pipeline.load.load import load_raw
 from pipeline.load.load_gold import load_gold
 from pipeline.load.load_insight import load_insight
 
@@ -64,7 +65,6 @@ def extract_city(city_name: str, city: City) -> RawAirQuality:
 @task(retries=2, retry_delay_seconds=5)
 def load_records(records: list[dict]) -> int:
     load_raw(records)
-    return len(records)
 
 
 # ---------------------------------------------------------------------------- #
@@ -77,7 +77,7 @@ def publish_gold_and_insights() -> None:
 # ---------------------------------------------------------------------------- #
 @task(retries=2, retry_delay_seconds=5)
 def enrich() -> list[dict]:
-    return run_enrichment(supabase)
+    return run_enrichment(get_supabase_client())
 
 
 # ---------------------------------------------------------------------------- #

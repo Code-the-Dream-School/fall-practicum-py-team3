@@ -92,6 +92,9 @@ def raw_loader(monkeypatch):
             self.client.upsert_calls.append((batch, on_conflict))
             return self
 
+        def select(self):
+            return self
+
         def execute(self):
             for record in self.batch:
                 key = tuple(
@@ -112,18 +115,8 @@ def raw_loader(monkeypatch):
             return MemoryTable(self)
 
     client = MemoryClient()
-    import dotenv
-    import supabase
-
-    # use mock in place of dependencies
-    monkeypatch.setattr(
-        dotenv,
-        "dotenv_values",
-        lambda _: {"SUPABASE_URL": "test", "SUPABASE_KEY": "test"},
-    )
-    monkeypatch.setattr(supabase, "create_client", lambda *_: client)
     load_module = importlib.import_module("pipeline.load.load")
-    monkeypatch.setattr(load_module, "supabase", client)
+    monkeypatch.setattr(load_module, "get_supabase_client", lambda: client)
     return load_module.load_raw, client
 
 
@@ -211,7 +204,7 @@ def test_load_empty_list_inserts_nothing(raw_loader):
     load_raw([])
 
     assert client.records == {}
-    assert client.upsert_calls == []
+    assert client.upsert_calls == [([], "city,timestamp")]
 
 
 # ---------------------------------------------------------------------------- #
