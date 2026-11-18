@@ -149,5 +149,5 @@ if __name__ == "__main__":
     # main_incremental() = new hourly data
 
 
-    # main() # uncomment for backfill
-    main_incremental() # uncomment for incremental
+    main() # uncomment for backfill
+    # main_incremental() # uncomment for incremental
