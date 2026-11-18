@@ -47,13 +47,17 @@ Every write is an upsert, so rerunning the same day is safe. The dashboard only 
 
 ```mermaid
 flowchart LR
-    EB[EventBridge schedule] --> LAM[Lambda: ingest]
-    LAM --> SB[(Supabase Postgres)]
-    CW[CloudWatch logs] -. observes .-> LAM
-    SSM[SSM Parameter Store<br/>secrets] -. feeds .-> LAM
-    SNS[SNS alarms] -. alerts .-> TEAM[Team]
-    SB --> SC[Streamlit Community Cloud<br/>dashboard]
-    GH[GitHub] -. deploy .-> LAM
+    A["EventBridge<br/>(schedule)"] --> B["Lambda 1<br/>ingest + transform"]
+    B <--> W["OpenWeather"]
+    B --> D[("Supabase<br/>raw + gold")]
+
+    C["EventBridge<br/>(second schedule)"] --> E["Lambda 2<br/>enrich"]
+    D --> E
+    E <--> O["OpenAI"]
+    E --> D2[("Supabase<br/>insights")]
+
+    D --> S["Streamlit<br/>dashboard"]
+    D2 --> S
 ```
 
 Region, IAM roles, and secret names are settled in Sprint 4.
