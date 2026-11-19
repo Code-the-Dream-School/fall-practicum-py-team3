@@ -39,7 +39,10 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
+        run: python -m pip install --upgrade pip && python -m pip install -e .
+
+      - name: Run Ruff
+        run: ruff check . && ruff format --check .
 
       - name: Run pipeline tests
-        run: python -m pytest
+        run: pytest

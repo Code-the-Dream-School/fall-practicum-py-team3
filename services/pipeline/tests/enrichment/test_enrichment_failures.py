@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from pipeline.enrichment import enrichment as en 
+from pipeline.enrichment import enrichment as en
 
 GOOD_TEXT = "Boston's air was in the Fair range on November 5, with a 24-hour average AQI of 2.0."
 
@@ -50,7 +50,7 @@ class InMemoryQuery:
             self._client.saved.extend(self._payload)
             return SimpleNamespace(data=self._payload)
         end = None if self._hi is None else self._hi + 1
-        return SimpleNamespace(data=self._client.rows[self._lo:end])
+        return SimpleNamespace(data=self._client.rows[self._lo : end])
 
 
 class InMemoryClient:
@@ -71,7 +71,8 @@ def run_log(monkeypatch):
     monkeypatch.setattr(en, "start_run", lambda: 1)
     monkeypatch.setattr(en, "finish_run", lambda run_id, **kw: setattr(log, "finished", kw))
     monkeypatch.setattr(
-        en, "fail_run",
+        en,
+        "fail_run",
         lambda run_id, error, **kw: setattr(log, "failed", (str(error), kw)),
     )
     return log
@@ -117,17 +118,20 @@ def test_invalid_json_reply_uses_template(monkeypatch):
     assert result["enriched_at"] is not None
 
 
-@pytest.mark.parametrize("reply", [
-    {},
-    {"insight_text": None},
-    {"insight_text": ""},
-    {"insight_text": "   "},
-    {"insight_text": 123},
-    {"insight_text": "x" * 301},
-    {"insight_text": "Boston had Fair air. It was a calm day."},
-    {"insight_text": "Boston's air was Fair and nobody should worry."},
-    ["not", "a", "dict"],
-])
+@pytest.mark.parametrize(
+    "reply",
+    [
+        {},
+        {"insight_text": None},
+        {"insight_text": ""},
+        {"insight_text": "   "},
+        {"insight_text": 123},
+        {"insight_text": "x" * 301},
+        {"insight_text": "Boston had Fair air. It was a calm day."},
+        {"insight_text": "Boston's air was Fair and nobody should worry."},
+        ["not", "a", "dict"],
+    ],
+)
 def test_unusable_reply_uses_template(monkeypatch, reply):
     monkeypatch.setattr(en, "call_llm", lambda record: reply)
     result = en.enrich_record(make_record())
@@ -138,7 +142,7 @@ def test_unusable_reply_uses_template(monkeypatch, reply):
     assert "Fair" in result["insight_text"]
 
 
-# missing or invalid data: the LLM is never called 
+# missing or invalid data: the LLM is never called
 @pytest.mark.parametrize("value", [None, "high", float("nan"), 0, 6, True])
 def test_bad_aqi_skips_llm_and_records_reason(monkeypatch, value):
     calls = []
@@ -183,13 +187,15 @@ def test_call_llm_uses_the_client_it_is_given():
     assert captured["response_format"] == {"type": "json_object"}
 
 
-# one bad record never stops the batch 
+# one bad record never stops the batch
 def test_one_failing_record_does_not_stop_the_batch(monkeypatch):
     def fake_llm(record):
         if record["city"] == "Denver":
             raise RuntimeError("boom")
-        return {"insight_text": f"{record['city']}'s air was in the Fair range on November 5, "
-                                f"with a 24-hour average AQI of 2.0."}
+        return {
+            "insight_text": f"{record['city']}'s air was in the Fair range on November 5, "
+            f"with a 24-hour average AQI of 2.0."
+        }
 
     monkeypatch.setattr(en, "call_llm", fake_llm)
     records = [make_record(city="Boston"), make_record(city="Denver"), make_record(city="Chicago")]
@@ -215,11 +221,11 @@ def test_unexpected_error_is_caught_by_the_batch(monkeypatch):
 
 
 # run_enrichment (saving and run tracking)
-def test_run_enrichment_saves_every_record_even_when_one_fails(monkeypatch, run_log, capsys):
+def test_run_enrichment_saves_every_record_even_when_one_fails(monkeypatch, run_log, caplog):
     monkeypatch.setattr(en, "call_llm", lambda record: {"insight_text": GOOD_TEXT})
     client = InMemoryClient([make_record(), make_record(city="Denver", aqi_24h_avg=None)])
     results = en.run_enrichment(client)
-    out = capsys.readouterr().out
+    out = caplog.text
     assert len(results) == 2
     assert len(client.saved) == 2
     denver = [r for r in client.saved if r["city"] == "Denver"][0]
@@ -232,10 +238,10 @@ def test_run_enrichment_saves_every_record_even_when_one_fails(monkeypatch, run_
     assert "missing aqi_24h_avg" in out
 
 
-def test_run_enrichment_with_nothing_to_do(run_log, capsys):
+def test_run_enrichment_with_nothing_to_do(run_log, caplog):
     client = InMemoryClient([])
     assert en.run_enrichment(client) == []
-    assert "Nothing to enrich." in capsys.readouterr().out
+    assert "Nothing to enrich." in caplog.text
     assert run_log.finished["rows_extracted"] == 0
     assert client.saved == []
 
@@ -247,27 +253,33 @@ def test_run_enrichment_with_missing_key_fails_the_run_and_saves_nothing(run_log
     assert "API key" in run_log.failed[0]
     assert run_log.finished is None
     assert client.saved == []
-    
-    
+
+
 # single-sentence check
-@pytest.mark.parametrize("text", [
-    "Boston was Fair.",
-    "Boston was Fair",
-    "Boston was Fair!  ",
-    "AQI was 2.0 in Boston.",
-    "Chicago in the U.S. Midwest was Fair.",
-    "St. Louis air was Fair.",
-    "Washington, D.C. was Fair today.",
-])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Boston was Fair.",
+        "Boston was Fair",
+        "Boston was Fair!  ",
+        "AQI was 2.0 in Boston.",
+        "Chicago in the U.S. Midwest was Fair.",
+        "St. Louis air was Fair.",
+        "Washington, D.C. was Fair today.",
+    ],
+)
 def test_single_sentence_is_accepted(text):
     assert en.is_single_sentence(text) is True
 
 
-@pytest.mark.parametrize("text", [
-    "Boston was Fair. Denver was Good.",
-    "Boston was Fair! It was calm.",
-    "Boston was Fair? Yes. Good air.",
-])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Boston was Fair. Denver was Good.",
+        "Boston was Fair! It was calm.",
+        "Boston was Fair? Yes. Good air.",
+    ],
+)
 def test_several_sentences_are_rejected(text):
     assert en.is_single_sentence(text) is False
 

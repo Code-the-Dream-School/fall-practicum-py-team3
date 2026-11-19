@@ -1,9 +1,65 @@
-[project]
-name = "city-air-tracker"
-version = "0.1.0"
-requires-python = ">=3.12"
-dependencies = []
+# pyproject.toml
+# Tells Python tools (pip, pytest, ruff) how to build and configure this project.
 
+# --------------------------------------------------------------------------- #
+# Build system: how pip builds the package when you run `pip install -e .`
+# --------------------------------------------------------------------------- #
+[build-system]
+# setuptools is the classic, beginner-friendly build backend.
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+# --------------------------------------------------------------------------- #
+# Project metadata
+# --------------------------------------------------------------------------- #
+[project]
+name = "city-air-tracker"          # the name used on PyPI / by pip
+version = "0.1.0"                  # bump this when you release a new version
+requires-python = ">=3.12"         # minimum Python version (we use 3.12+ features)
+# Dependencies are pulled from requirements.txt so there's one source of truth.
+dynamic = ["dependencies"]
+
+# Read the dependency list from requirements.txt instead of duplicating it here.
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+# --------------------------------------------------------------------------- #
+# Package discovery: where is the Python code?
+# --------------------------------------------------------------------------- #
+# Our code lives under services/pipeline/src, so pip needs to be told to look
+# there. It finds the `pipeline` package (which now also contains
+# `data_contracts`) there.
+[tool.setuptools.packages.find]
+where = ["services/pipeline/src"]
+include = ["pipeline*"]
+
+# --------------------------------------------------------------------------- #
+# Non-Python files that must ship with the package (CSV/YAML data, etc.)
+# --------------------------------------------------------------------------- #
+[tool.setuptools.package-data]
+pipeline = ["cities.yaml"]                 # city list used by the extract step
+"pipeline.dashboard" = ["pollutants.csv"]  # pollutant facts shown in the dashboard
+
+# --------------------------------------------------------------------------- #
+# pytest configuration
+# --------------------------------------------------------------------------- #
 [tool.pytest.ini_options]
-pythonpath = ["services/pipeline/src", "."]
-testpaths = ["services/pipeline/tests"]
+testpaths = ["services/pipeline/tests"]    # where pytest looks for tests
+# No `pythonpath` needed: `pip install -e .` makes `pipeline` importable.
+
+# --------------------------------------------------------------------------- #
+# Ruff: linter + formatter + import sorter (all-in-one, zero-config friendly)
+# --------------------------------------------------------------------------- #
+[tool.ruff]
+line-length = 120   # max characters per line
+
+[tool.ruff.lint]
+# E = pycodestyle errors, F = pyflakes, I = import sorting (isort).
+select = ["E", "F", "I"]
+# BLE001 = catching a bare Exception; TRY002 = raising a bare Exception.
+# Both are allowed here because this pipeline code intentionally uses them.
+ignore = ["BLE001", "TRY002"]
+
+[tool.ruff.lint.isort]
+# Tell Ruff which modules are "our own" so imports group correctly.
+known-first-party = ["pipeline"]

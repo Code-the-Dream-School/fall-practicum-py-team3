@@ -1,9 +1,8 @@
 from pipeline.extract.extract import CITIES
 
-
 ##Retrieve gold data for LLM insights.
 
-PAGE_SIZE = 1000 
+PAGE_SIZE = 1000
 
 # Fields sent to the LLM prompt.
 INSIGHT_FIELDS = ("city", "timestamp", "category", "aqi_24h_avg")
@@ -18,6 +17,7 @@ def _apply_filters(query, city, start, end):
         query = query.lte("timestamp", end)
     return query.order("city").order("timestamp")
 
+
 def _fetch_all(client, table, city, start, end):
     # one city at a time, walking forward by timestamp. No OFFSET.
     names = [city] if city else list(CITIES)
@@ -26,9 +26,7 @@ def _fetch_all(client, table, city, start, end):
     for name in names:
         cursor = None
         while True:
-            query = _apply_filters(
-                client.table(table).select("*"), name, start, end
-            ).limit(PAGE_SIZE)
+            query = _apply_filters(client.table(table).select("*"), name, start, end).limit(PAGE_SIZE)
             # after the first page, pick up just past the last row we saw
             if cursor is not None:
                 query = query.gt("timestamp", cursor)
@@ -44,6 +42,7 @@ def _fetch_all(client, table, city, start, end):
                 break
 
     return rows
+
 
 def get_gold_records(client, city=None, start=None, end=None):
     """All gold rows, optionally filtered by city and a timestamp range."""

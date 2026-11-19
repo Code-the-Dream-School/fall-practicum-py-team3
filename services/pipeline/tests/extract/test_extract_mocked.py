@@ -1,20 +1,31 @@
+from unittest.mock import Mock, patch
+
 import pytest
 import requests
 from pydantic import ValidationError
-from unittest.mock import Mock, patch
 
-from pipeline.extract.extract import extract, City
+from pipeline.extract.extract import City, extract
 
 LAT, LON, START, END = 38.9, -77.04, 1606488670, 1606747870
 
 GOOD = {
     "coord": {"lon": LON, "lat": LAT},
-    "list": [{
-        "dt": 1606482000,
-        "main": {"aqi": 2},
-        "components": {"co": 270.367, "no": 5.867, "no2": 0.5, "o3": 4.783,
-                       "so2": 14.544, "pm2_5": 13.448, "pm10": 15.524, "nh3": 0.289},
-    }],
+    "list": [
+        {
+            "dt": 1606482000,
+            "main": {"aqi": 2},
+            "components": {
+                "co": 270.367,
+                "no": 5.867,
+                "no2": 0.5,
+                "o3": 4.783,
+                "so2": 14.544,
+                "pm2_5": 13.448,
+                "pm10": 15.524,
+                "nh3": 0.289,
+            },
+        }
+    ],
 }
 
 
@@ -34,8 +45,10 @@ def fake_response(status=200, data=None):
 def fake_key(monkeypatch):
     monkeypatch.setattr("pipeline.extract.extract.settings.openweather_api_key", "fake-key", raising=False)
     from pipeline.config import settings
+
     monkeypatch.setattr(settings, "openweather_api_key", "fake-key")
     from pipeline.extract.extract import clear_cache
+
     clear_cache()
 
 

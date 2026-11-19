@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Set up the dev environment.
 
@@ -47,6 +46,12 @@ def install_dependencies():
     if requirements.exists():
         print("Installing requirements...")
         run(*pip, "install", "-r", str(requirements))
+
+    print("Installing package in editable mode...")
+    run(*pip, "install", "-e", str(ROOT))
+
+    print("Installing pre-commit hooks...")
+    run(str(VENV_PYTHON), "-m", "pre_commit", "install", "--hook-type", "pre-push")
 
 
 def ensure_env_file():
