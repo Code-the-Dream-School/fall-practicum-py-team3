@@ -122,6 +122,5 @@ if __name__ == "__main__":
     # main_backfill() = backfill (10-25-25 thru 10-25-26)
     # main_incremental() = new hourly data
 
-
-    main_backfill() # uncomment for backfill
+    main_backfill()  # uncomment for backfill
     # main_incremental() # uncomment for incremental
