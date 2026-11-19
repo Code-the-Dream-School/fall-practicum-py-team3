@@ -18,12 +18,7 @@ def load_raw(records):
         total_loaded = 0
         for offset in range(0, total, batch_size):
             batch = records[offset : offset + batch_size]
-            response = (
-                supabase.table("raw_air_quality")
-                .upsert(batch, on_conflict="city,timestamp")
-                .select()
-                .execute()
-            )
+            response = supabase.table("raw_air_quality").upsert(batch, on_conflict="city,timestamp").select().execute()
             total_loaded += len(response.data)
         logger.info("Upserted %s rows into raw_air_quality", total_loaded)
         return total_loaded

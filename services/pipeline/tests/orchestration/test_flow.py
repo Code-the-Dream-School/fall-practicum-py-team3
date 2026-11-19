@@ -1,14 +1,12 @@
 import importlib.util
+
 import pytest
+
 from pipeline.config import settings
 
 ROOT = settings.model_config["env_file"].parent
-FLOW_PATH = (
-    ROOT / "services" / "pipeline" / "src" / "pipeline" / "orchestration" / "flow.py"
-)
-FLOW_SPEC = importlib.util.spec_from_file_location(
-    "pipeline_flow_under_test", FLOW_PATH
-)
+FLOW_PATH = ROOT / "services" / "pipeline" / "src" / "pipeline" / "orchestration" / "flow.py"
+FLOW_SPEC = importlib.util.spec_from_file_location("pipeline_flow_under_test", FLOW_PATH)
 flow_module = importlib.util.module_from_spec(FLOW_SPEC)
 FLOW_SPEC.loader.exec_module(flow_module)
 
@@ -40,9 +38,7 @@ class ExtractedRecords:
 
 # ---------------------------------------------------------------------------- #
 def prepare_flow(monkeypatch):
-    monkeypatch.setattr(
-        flow_module, "extract_city", lambda city_name, city: ExtractedRecords()
-    )
+    monkeypatch.setattr(flow_module, "extract_city", lambda city_name, city: ExtractedRecords())
     monkeypatch.setattr(flow_module, "get_supabase_client", lambda: None)
     monkeypatch.setattr(flow_module, "load_records", lambda records: len(records))
     monkeypatch.setattr(flow_module, "load_gold", lambda: None)

@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from openai import OpenAI
 
@@ -9,13 +9,14 @@ from pipeline.db import get_supabase_client
 from pipeline.run_tracking import fail_run, finish_run, start_run
 from pipeline.transform.transform import aqi_category
 
-
 SENTENCE_BREAK_PATTERN = r"(?<=[.!?])\s+(?=[A-Z])"
 
 ABBREVIATION_PATTERN = r"\b(?:U\.S\.|U\.K\.|D\.C\.|St\.|Mt\.|Ft\.|Dr\.|No\.)"
 
+
 class LLMConfigError(RuntimeError):
     """The LLM cannot be used at all (for example a missing key). Stops the whole run."""
+
 
 def fallback_template(record):
     category = aqi_category(round(record["aqi_24h_avg"]))
@@ -195,7 +196,7 @@ def enrich_record(record):
     result["insight_text"] = text
     result["prompt_version"] = PROMPT_VERSION
     result["enriched_at"] = datetime.now(timezone.utc).isoformat()
-    result["enrichment_error"] = None    #clear any previous error if enrichment succeeds
+    result["enrichment_error"] = None  # clear any previous error if enrichment succeeds
 
     return result
 
@@ -293,10 +294,7 @@ def run_enrichment(client, batch_size=25, limit=None):
             rows_transformed += len(batch_results)
 
             # save enriched results to supabase
-            client.table("daily_insight").upsert(
-                batch_results,
-                on_conflict="city,timestamp"
-            ).execute()
+            client.table("daily_insight").upsert(batch_results, on_conflict="city,timestamp").execute()
             rows_loaded += len(batch_results)
 
             print(f"Enriched {len(results)} of {len(rows)}")

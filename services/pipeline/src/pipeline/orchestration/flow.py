@@ -1,8 +1,12 @@
 from __future__ import annotations
-from typing import Mapping
-from prefect import flow, get_run_logger, task
-from pipeline.config import settings
 
+from typing import Mapping
+
+from prefect import flow, get_run_logger, task
+
+from pipeline.config import settings
+from pipeline.db import get_supabase_client
+from pipeline.enrichment.enrichment import run_enrichment
 from pipeline.extract.extract import (
     CITIES,
     END,
@@ -12,8 +16,6 @@ from pipeline.extract.extract import (
     extract,
     extract_all_windows,
 )
-from pipeline.enrichment.enrichment import run_enrichment
-from pipeline.db import get_supabase_client
 from pipeline.load.load import load_raw
 from pipeline.load.load_gold import load_gold
 from pipeline.load.load_insight import load_insight
@@ -31,9 +33,7 @@ def extract_city(city_name: str, city: City) -> RawAirQuality:
     # cache
     cache_path = RAW_DIR / f"{city_name.lower().replace(' ', '_')}.json"
     if cache_path.exists():
-        cached = RawAirQuality.model_validate_json(
-            cache_path.read_text(encoding="utf-8")
-        )
+        cached = RawAirQuality.model_validate_json(cache_path.read_text(encoding="utf-8"))
         parameters = cached.request_parameters
         if (
             parameters.lat == city.LAT

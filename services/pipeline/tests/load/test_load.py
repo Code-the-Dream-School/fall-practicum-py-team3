@@ -1,9 +1,8 @@
+import importlib
 from datetime import UTC, datetime
 
 import pytest
-import importlib
 from pydantic import ValidationError
-from pipeline.config import settings
 
 # ---------------------------------------------------------------------------- #
 # setup / sample data
@@ -88,9 +87,7 @@ def raw_loader(monkeypatch):
 
         def execute(self):
             for record in self.batch:
-                key = tuple(
-                    record[column] for column in self.conflict_columns.split(",")
-                )
+                key = tuple(record[column] for column in self.conflict_columns.split(","))
                 self.client.records[key] = record
             self.data = self.batch
             return self
