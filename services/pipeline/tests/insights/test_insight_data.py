@@ -1,12 +1,8 @@
-import sys
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-ROOT = Path(__file__).resolve().parents[4]
-sys.path.insert(0, str(ROOT / "services" / "pipeline" / "src"))
 
-from pipeline.insight_data import (  
+from pipeline.insight_data import (
     PAGE_SIZE,
     get_gold_records,
     get_unenriched_gold,
@@ -15,7 +11,6 @@ from pipeline.insight_data import (
 
 
 class InMemoryQuery:
-
     def __init__(self, rows, error=None):
         self._rows, self._error = list(rows), error
         self._order, self._lo, self._hi = [], 0, None
@@ -57,10 +52,11 @@ class InMemoryQuery:
             raise self._error
         rows = sorted(self._rows, key=lambda r: tuple(r[c] for c in self._order))
         end = None if self._hi is None else self._hi + 1
-        rows = rows[self._lo:end]
+        rows = rows[self._lo : end]
         if self._limit is not None:
-            rows = rows[:self._limit]
+            rows = rows[: self._limit]
         return SimpleNamespace(data=rows)
+
 
 class InMemoryClient:
     def __init__(self, tables, error=None):
@@ -71,25 +67,32 @@ class InMemoryClient:
 
 
 def make_gold_row(city, ts, **extra):
-    return {"city": city, "timestamp": ts, "category": "Fair", "aqi": 2,
-            "aqi_24h_avg": 2.0, "pm2_5": 5.0, **extra}
+    return {"city": city, "timestamp": ts, "category": "Fair", "aqi": 2, "aqi_24h_avg": 2.0, "pm2_5": 5.0, **extra}
 
 
 def test_returns_rows_for_city_only():
-    client = InMemoryClient({"gold_air_quality": [
-        make_gold_row("Boston", "2024-01-01"),
-        make_gold_row("Chicago", "2024-01-01"),
-    ]})
+    client = InMemoryClient(
+        {
+            "gold_air_quality": [
+                make_gold_row("Boston", "2024-01-01"),
+                make_gold_row("Chicago", "2024-01-01"),
+            ]
+        }
+    )
     rows = get_gold_records(client, city="Boston")
     assert [r["city"] for r in rows] == ["Boston"]
 
 
 def test_date_range_filter():
-    client = InMemoryClient({"gold_air_quality": [
-        make_gold_row("Boston", "2024-01-01"),
-        make_gold_row("Boston", "2024-01-02"),
-        make_gold_row("Boston", "2024-01-03"),
-    ]})
+    client = InMemoryClient(
+        {
+            "gold_air_quality": [
+                make_gold_row("Boston", "2024-01-01"),
+                make_gold_row("Boston", "2024-01-02"),
+                make_gold_row("Boston", "2024-01-03"),
+            ]
+        }
+    )
     rows = get_gold_records(client, "Boston", start="2024-01-02", end="2024-01-02")
     assert [r["timestamp"] for r in rows] == ["2024-01-02"]
 
@@ -106,26 +109,30 @@ def test_pagination_returns_every_row():
 
 
 def test_unenriched_skips_rows_with_insight():
-    client = InMemoryClient({
-        "gold_air_quality": [
-            make_gold_row("Boston", "2024-01-01"),
-            make_gold_row("Boston", "2024-01-02"),
-        ],
-        "daily_insight": [
-            {"city": "Boston", "timestamp": "2024-01-01", "insight_text": "Fair air."},
-        ],
-    })
+    client = InMemoryClient(
+        {
+            "gold_air_quality": [
+                make_gold_row("Boston", "2024-01-01"),
+                make_gold_row("Boston", "2024-01-02"),
+            ],
+            "daily_insight": [
+                {"city": "Boston", "timestamp": "2024-01-01", "insight_text": "Fair air."},
+            ],
+        }
+    )
     rows = get_unenriched_gold(client)
     assert [r["timestamp"] for r in rows] == ["2024-01-02"]
 
 
 def test_row_with_empty_insight_text_counts_as_unenriched():
-    client = InMemoryClient({
-        "gold_air_quality": [make_gold_row("Boston", "2024-01-01")],
-        "daily_insight": [
-            {"city": "Boston", "timestamp": "2024-01-01", "insight_text": None},
-        ],
-    })
+    client = InMemoryClient(
+        {
+            "gold_air_quality": [make_gold_row("Boston", "2024-01-01")],
+            "daily_insight": [
+                {"city": "Boston", "timestamp": "2024-01-01", "insight_text": None},
+            ],
+        }
+    )
     assert len(get_unenriched_gold(client)) == 1
 
 
@@ -142,6 +149,7 @@ def test_insight_inputs_keep_nulls():
     inputs = select_insight_inputs(row)
     assert inputs["category"] is None
     assert inputs["aqi_24h_avg"] is None
+
 
 def test_database_error_is_raised():
     client = InMemoryClient({}, error=RuntimeError("db down"))

@@ -1,13 +1,13 @@
+from datetime import UTC, datetime
+
+from pipeline.db import get_supabase_client
+from pipeline.extract.extract import CITIES, City, extract_incremental_window, get_incremental_window
+from pipeline.extract.extract import extract as ext
 from pipeline.log import get_logger
+from pipeline.run_tracking import fail_run, finish_run, start_run
 
 logger = get_logger(__name__)
-import data_contracts.schemas as schemas
-from pipeline.db import get_supabase_client
-from pipeline.config import settings
 
-from pipeline.extract.extract import extract as ext, City, CITIES, get_incremental_window, extract_incremental_window
-from pipeline.run_tracking import start_run, finish_run, fail_run
-from datetime import datetime, timezone
 
 # Load raw data to db
 def load_raw(records):
@@ -18,12 +18,7 @@ def load_raw(records):
         total_loaded = 0
         for offset in range(0, total, batch_size):
             batch = records[offset : offset + batch_size]
-            response = (
-                supabase.table("raw_air_quality")
-                .upsert(batch, on_conflict="city,timestamp")
-                .select()
-                .execute()
-            )
+            response = supabase.table("raw_air_quality").upsert(batch, on_conflict="city,timestamp").select().execute()
             total_loaded += len(response.data)
         logger.info("Upserted %s rows into raw_air_quality", total_loaded)
         return total_loaded
@@ -31,39 +26,30 @@ def load_raw(records):
         logger.exception("Failed to load raw air quality records: %s", error)
         raise
 
+
 # incremental
 def main_incremental():
     # get next extraction window
     window = get_incremental_window()
 
     if window is None:
-        print("No new completed hours to extract.")
+        logger.info("No new completed hours to extract.")
         return
 
     start, end = window
 
-    window_start = datetime.fromtimestamp(
-        start, timezone.utc
-    ).isoformat()
+    window_start = datetime.fromtimestamp(start, UTC).isoformat()
 
-    window_end = datetime.fromtimestamp(
-        end, timezone.utc
-    ).isoformat()
+    window_end = datetime.fromtimestamp(end, UTC).isoformat()
 
-    run_id = start_run(
-        run_mode="incremental",
-        window_start=window_start,
-        window_end=window_end
-    )
+    run_id = start_run(run_mode="incremental", window_start=window_start, window_end=window_end)
 
     rows_extracted = 0
     rows_loaded = 0
 
     try:
         for name, coords in CITIES.items():
-            extraction = extract_incremental_window(
-                name, coords, start, end
-            )
+            extraction = extract_incremental_window(name, coords, start, end)
 
             records = extraction.to_raw_schema(name)
 
@@ -71,7 +57,7 @@ def main_incremental():
 
             rows_loaded += load_raw(records)
 
-            print(f"{name}: {len(records)} records extracted")
+            logger.info("%s: %s records extracted", name, len(records))
 
         finish_run(
             run_id,
@@ -80,7 +66,7 @@ def main_incremental():
             rows_transformed=0,
         )
 
-        print("Incremental extraction and loading completed")
+        logger.info("Incremental extraction and loading completed")
 
     except Exception as error:
         fail_run(
@@ -91,32 +77,24 @@ def main_incremental():
         )
         raise
 
+
 def main():
     run_id = start_run(
         run_mode="backfill",
-        window_start=datetime.fromtimestamp(
-            1761350400, timezone.utc
-        ).isoformat(),
-        window_end=datetime.fromtimestamp(
-            1792886400, timezone.utc
-        ).isoformat(),
+        window_start=datetime.fromtimestamp(1761350400, UTC).isoformat(),
+        window_end=datetime.fromtimestamp(1792886400, UTC).isoformat(),
     )
 
     rows_loaded = 0
 
     try:
         for name, coords in CITIES.items():
-            city = City(
-                LAT=coords["LAT"],
-                LON=coords["LON"],
-                START=1761350400,
-                END=1792886400
-            )
+            city = City(LAT=coords["LAT"], LON=coords["LON"], START=1761350400, END=1792886400)
 
             extraction = ext(city)
             records = extraction.to_raw_schema(name)
 
-            print(f"{name} records: {len(records)}")
+            logger.info("%s records: %s", name, len(records))
 
             rows_loaded += load_raw(records)
 
@@ -127,7 +105,7 @@ def main():
             rows_loaded=rows_loaded,
         )
 
-        print("Raw loading completed successfully.")
+        logger.info("Raw loading completed successfully.")
 
     except Exception as error:
         fail_run(
@@ -136,10 +114,6 @@ def main():
             rows_loaded=rows_loaded,
         )
         raise
-
-
-
-
 
 
 if __name__ == "__main__":

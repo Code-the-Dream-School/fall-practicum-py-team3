@@ -1,10 +1,10 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from pipeline.db import get_supabase_client
 
 
 def _now():
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def start_run(run_mode=None, window_start=None, window_end=None):
@@ -12,10 +12,19 @@ def start_run(run_mode=None, window_start=None, window_end=None):
     response = (
         get_supabase_client()
         .table("pipeline_runs")
-        .insert({"status": "running", "started_at": _now(), "run_mode": run_mode, "window_start": window_start, "window_end": window_end})
+        .insert(
+            {
+                "status": "running",
+                "started_at": _now(),
+                "run_mode": run_mode,
+                "window_start": window_start,
+                "window_end": window_end,
+            }
+        )
         .execute()
     )
     return response.data[0]["run_id"]
+
 
 # get most recent successful backfill or incremental run
 def get_last_successful_run():
@@ -30,7 +39,7 @@ def get_last_successful_run():
         .limit(1)
         .execute()
     )
-    
+
     return response.data[0] if response.data else None
 
 
