@@ -7,14 +7,12 @@ import requests
 import yaml
 from pydantic import BaseModel
 
-import pipeline.data_contracts.schemas as _schemas
 from pipeline.config import settings
+from pipeline.data_contracts.schemas import RawAirQuality, RequestParameters
 from pipeline.log import get_logger
 from pipeline.run_tracking import fail_run, finish_run, get_last_successful_run, start_run
 
 logger = get_logger(__name__)
-RawAirQuality = _schemas.RawAirQuality
-RequestParameters = _schemas.RequestParameters
 
 
 # Pydantic for validating the latitude, longitude, start, and end
@@ -134,7 +132,7 @@ RETRY_DELAY_SECONDS = 1
 
 
 def raw_path(city_name):
-    return Path(f"./services/pipeline/src/pipeline/extract/cities_raw/{city_name.lower().replace(' ', '_')}.json")
+    return Path(__file__).resolve().parent / "cities_raw" / f"{city_name.lower().replace(' ', '_')}.json"
 
 
 def chunk_windows(start, end, size=CHUNK_SECONDS):

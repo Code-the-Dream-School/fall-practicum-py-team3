@@ -1,4 +1,3 @@
-import importlib
 from datetime import UTC, datetime
 
 import pytest
@@ -7,6 +6,7 @@ from pydantic import ValidationError
 # ---------------------------------------------------------------------------- #
 # setup / sample data
 import pipeline
+import pipeline.load.load as load_module
 from pipeline.data_contracts.schemas import (
     AirQualityRecord,
     AirQualityResponse,
@@ -103,7 +103,6 @@ def raw_loader(monkeypatch):
             return MemoryTable(self)
 
     client = MemoryClient()
-    load_module = importlib.import_module("pipeline.load.load")
     monkeypatch.setattr(load_module, "get_supabase_client", lambda: client)
     return load_module.load_raw, client
 

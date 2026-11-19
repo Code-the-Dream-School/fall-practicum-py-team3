@@ -1,14 +1,6 @@
-import importlib.util
-
 import pytest
 
-from pipeline.config import settings
-
-ROOT = settings.model_config["env_file"].parent
-FLOW_PATH = ROOT / "services" / "pipeline" / "src" / "pipeline" / "orchestration" / "flow.py"
-FLOW_SPEC = importlib.util.spec_from_file_location("pipeline_flow_under_test", FLOW_PATH)
-flow_module = importlib.util.module_from_spec(FLOW_SPEC)
-FLOW_SPEC.loader.exec_module(flow_module)
+import pipeline.orchestration.flow as flow_module
 
 RAW_RECORD = {
     "city": "Test City",
