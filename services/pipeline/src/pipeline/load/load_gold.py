@@ -1,7 +1,10 @@
 from pipeline.db import get_supabase_client
 from pipeline.extract.extract import CITIES
+from pipeline.log import get_logger
 from pipeline.run_tracking import fail_run, finish_run, start_run
 from pipeline.transform.transform import REQUIRED, transform
+
+logger = get_logger(__name__)
 
 
 def load_gold():
@@ -42,8 +45,8 @@ def load_gold():
 
             # no rows for a city usually means the name here doesn't match the table
             if len(raw_records) == before:
-                print(f"WARNING: no raw rows found for '{city}'")
-        print(f"Fetched {len(raw_records)} raw records.")
+                logger.warning("No raw rows found for '%s'", city)
+        logger.info("Fetched %s raw records.", len(raw_records))
 
         # transform rejects the whole batch if any row is missing a required
         # value, so drop incomplete rows first and report how many were skipped
@@ -52,11 +55,11 @@ def load_gold():
         ]
         skipped = len(raw_records) - len(complete_records)
         if skipped:
-            print(f"Skipped {skipped} raw records with missing values.")
+            logger.warning("Skipped %s raw records with missing values.", skipped)
         raw_records = complete_records
 
         if not raw_records:
-            print("No raw records to transform.")
+            logger.info("No raw records to transform.")
             finish_run(
                 run_id,
                 rows_extracted=rows_extracted,
@@ -71,7 +74,7 @@ def load_gold():
         rows_transformed = len(gold_records)
 
         if not gold_records:
-            print("No gold records to load.")
+            logger.info("No gold records to load.")
             finish_run(
                 run_id,
                 rows_extracted=rows_extracted,
@@ -101,7 +104,7 @@ def load_gold():
 
             rows_loaded += len(batch)
 
-        print(f"Loaded {len(gold_records)} gold records.")
+        logger.info("Loaded %s gold records.", len(gold_records))
 
         finish_run(
             run_id,
@@ -118,7 +121,7 @@ def load_gold():
             rows_transformed=rows_transformed,
             rows_loaded=rows_loaded,
         )
-        print(f"Failed to load gold air quality records: {error}.")
+        logger.error("Failed to load gold air quality records: %s.", error)
         raise
 
 

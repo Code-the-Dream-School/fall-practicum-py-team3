@@ -2,7 +2,10 @@ import pandas as pd
 
 from pipeline.insight_data import get_gold_records
 from pipeline.load.load import get_supabase_client
+from pipeline.log import get_logger
 from pipeline.run_tracking import fail_run, finish_run, start_run
+
+logger = get_logger(__name__)
 
 
 def load_insight():
@@ -17,10 +20,10 @@ def load_insight():
         gold_records = get_gold_records(supabase)
         rows_extracted = len(gold_records)
 
-        print(f"Fetched {len(gold_records)} gold records.")
+        logger.info("Fetched %s gold records.", len(gold_records))
 
         if not gold_records:
-            print("No gold records to process.")
+            logger.info("No gold records to process.")
             finish_run(
                 run_id,
                 rows_extracted=rows_extracted,
@@ -66,7 +69,7 @@ def load_insight():
         rows_transformed = len(daily_records)
 
         if not daily_records:
-            print("No daily records with at least 18 hours.")
+            logger.info("No daily records with at least 18 hours.")
             finish_run(
                 run_id,
                 rows_extracted=rows_extracted,
@@ -75,7 +78,7 @@ def load_insight():
             )
             return
 
-        print(f"Prepared {len(daily_records)} daily records.")
+        logger.info("Prepared %s daily records.", len(daily_records))
 
         # load daily records in batch of 500
         batch_size = 500
@@ -87,7 +90,7 @@ def load_insight():
 
             rows_loaded += len(batch)
 
-        print(f"Loaded {len(daily_records)} daily insight records.")
+        logger.info("Loaded %s daily insight records.", len(daily_records))
 
         finish_run(
             run_id,
@@ -104,7 +107,7 @@ def load_insight():
             rows_transformed=rows_transformed,
             rows_loaded=rows_loaded,
         )
-        print(f"Failed to load daily insight records: {error}.")
+        logger.error("Failed to load daily insight records: %s.", error)
         raise
 
 

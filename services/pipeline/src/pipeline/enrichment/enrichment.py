@@ -6,8 +6,11 @@ from openai import OpenAI
 
 from pipeline.config import settings
 from pipeline.db import get_supabase_client
+from pipeline.log import get_logger
 from pipeline.run_tracking import fail_run, finish_run, start_run
 from pipeline.transform.transform import aqi_category
+
+logger = get_logger(__name__)
 
 SENTENCE_BREAK_PATTERN = r"(?<=[.!?])\s+(?=[A-Z])"
 
@@ -276,7 +279,7 @@ def run_enrichment(client, batch_size=25, limit=None):
         rows_extracted = len(rows)
 
         if not rows:
-            print("Nothing to enrich.")
+            logger.info("Nothing to enrich.")
             finish_run(
                 run_id,
                 rows_extracted=rows_extracted,
@@ -297,12 +300,12 @@ def run_enrichment(client, batch_size=25, limit=None):
             client.table("daily_insight").upsert(batch_results, on_conflict="city,timestamp").execute()
             rows_loaded += len(batch_results)
 
-            print(f"Enriched {len(results)} of {len(rows)}")
+            logger.info("Enriched %s of %s", len(results), len(rows))
 
         failed = [r for r in results if r.get("enrichment_error")]
-        print(f"Enriched {len(results) - len(failed)}, failed {len(failed)}.")
+        logger.info("Enriched %s, failed %s.", len(results) - len(failed), len(failed))
         for r in failed[:10]:  # show the first few reasons
-            print(f"  {r.get('city')} {r.get('timestamp')}: {r['enrichment_error']}")
+            logger.warning("  %s %s: %s", r.get("city"), r.get("timestamp"), r["enrichment_error"])
         finish_run(
             run_id,
             rows_extracted=rows_extracted,

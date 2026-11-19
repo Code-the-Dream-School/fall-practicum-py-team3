@@ -33,7 +33,7 @@ def main_incremental():
     window = get_incremental_window()
 
     if window is None:
-        print("No new completed hours to extract.")
+        logger.info("No new completed hours to extract.")
         return
 
     start, end = window
@@ -57,7 +57,7 @@ def main_incremental():
 
             rows_loaded += load_raw(records)
 
-            print(f"{name}: {len(records)} records extracted")
+            logger.info("%s: %s records extracted", name, len(records))
 
         finish_run(
             run_id,
@@ -66,7 +66,7 @@ def main_incremental():
             rows_transformed=0,
         )
 
-        print("Incremental extraction and loading completed")
+        logger.info("Incremental extraction and loading completed")
 
     except Exception as error:
         fail_run(
@@ -94,7 +94,7 @@ def main():
             extraction = ext(city)
             records = extraction.to_raw_schema(name)
 
-            print(f"{name} records: {len(records)}")
+            logger.info("%s records: %s", name, len(records))
 
             rows_loaded += load_raw(records)
 
@@ -105,7 +105,7 @@ def main():
             rows_loaded=rows_loaded,
         )
 
-        print("Raw loading completed successfully.")
+        logger.info("Raw loading completed successfully.")
 
     except Exception as error:
         fail_run(

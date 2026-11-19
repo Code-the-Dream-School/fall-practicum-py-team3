@@ -123,7 +123,7 @@ def extract(city: City) -> RawAirQuality:
 
     # Except block for JSON errors
     except requests.exceptions.JSONDecodeError as err:
-        print(f"Failed to decode JSON {err}")
+        logger.error("Failed to decode JSON %s", err)
         raise
 
 
@@ -207,7 +207,7 @@ def extract_incremental_window(name, coords, start, end):
             return extract(city)
 
         except requests.exceptions.RequestException as err:
-            print(f"{name}: attempt {attempt} failed ({err})")
+            logger.warning("%s: attempt %s failed (%s)", name, attempt, err)
 
             if attempt == RETRIES:
                 raise
@@ -243,7 +243,7 @@ def main():
     try:
         for name, coordinates in CITIES.items():
             if has_window(name):
-                print(f"{name}: already has the full window, skipping")
+                logger.info("%s: already has the full window, skipping", name)
                 continue
 
             result = extract_all_windows(name, coordinates)
@@ -252,7 +252,7 @@ def main():
             count = len(result.payload.list)
             rows_extracted += count
 
-            print(f"{name}: {count} records saved")
+            logger.info("%s: %s records saved", name, count)
 
         finish_run(
             run_id,
@@ -261,7 +261,7 @@ def main():
             rows_loaded=0,
         )
 
-        print("Extraction completed successfully.")
+        logger.info("Extraction completed successfully.")
 
     except Exception as error:
         fail_run(

@@ -221,11 +221,11 @@ def test_unexpected_error_is_caught_by_the_batch(monkeypatch):
 
 
 # run_enrichment (saving and run tracking)
-def test_run_enrichment_saves_every_record_even_when_one_fails(monkeypatch, run_log, capsys):
+def test_run_enrichment_saves_every_record_even_when_one_fails(monkeypatch, run_log, caplog):
     monkeypatch.setattr(en, "call_llm", lambda record: {"insight_text": GOOD_TEXT})
     client = InMemoryClient([make_record(), make_record(city="Denver", aqi_24h_avg=None)])
     results = en.run_enrichment(client)
-    out = capsys.readouterr().out
+    out = caplog.text
     assert len(results) == 2
     assert len(client.saved) == 2
     denver = [r for r in client.saved if r["city"] == "Denver"][0]
@@ -238,10 +238,10 @@ def test_run_enrichment_saves_every_record_even_when_one_fails(monkeypatch, run_
     assert "missing aqi_24h_avg" in out
 
 
-def test_run_enrichment_with_nothing_to_do(run_log, capsys):
+def test_run_enrichment_with_nothing_to_do(run_log, caplog):
     client = InMemoryClient([])
     assert en.run_enrichment(client) == []
-    assert "Nothing to enrich." in capsys.readouterr().out
+    assert "Nothing to enrich." in caplog.text
     assert run_log.finished["rows_extracted"] == 0
     assert client.saved == []
 
