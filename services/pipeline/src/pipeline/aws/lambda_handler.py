@@ -1,26 +1,33 @@
 from pipeline.log import get_logger
-from pipeline.aws.backfill import run_backfill
-from pipeline.aws.incremental import run_incremental
+from pipeline.load.load import main_backfill
+from pipeline.load.load_gold import load_gold
+from pipeline.load.load_insight import load_insight
 
 logger = get_logger(__name__)
 
 def lambda_handler(event, context):
-    mode = event.get("mode")
     
-    logger.info("Lambda triggered with mode: %s", mode)
-    
-    if mode == "backfill":
-        run_backfill()
+    try: 
+        logger.info("Starting backfill pipeline")
         
-    elif mode == "incremental":
-        run_incremental()
+        # extract/load raw data
+        logger.info("Starting extraction and load raw")
+        main_backfill()
         
-    else:
-        raise ValueError(f"Invalid pipeline mode: {mode}")
-    
-    logger.info("Lambda execution completed successfully.")
-    
-    return {
-        "status": "ok",
-        "mode": mode
-    }
+        # transform/load gold data
+        logger.info("Starting data transformation and load gold")
+        load_gold()
+        
+        # load daily insight
+        logger.info("Starting load daily insight")
+        load_insight()
+        
+        logger.info("Backfill pipeline completed successfully.")
+        
+        return {
+            "status": "ok"
+        }
+        
+    except Exception as error:
+        logger.exception("Failed to run pipeline.")
+        raise
