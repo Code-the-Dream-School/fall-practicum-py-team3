@@ -78,7 +78,7 @@ def main_incremental():
         raise
 
 
-def main_backfill():
+def main():
     run_id = start_run(
         run_mode="backfill",
         window_start=datetime.fromtimestamp(1761350400, UTC).isoformat(),
@@ -119,8 +119,8 @@ def main_backfill():
 if __name__ == "__main__":
     # !!! PLEASE READ BELOW !!!
     # run ONE mode at a time
-    # main_backfill() = backfill (10-25-25 thru 10-25-26)
+    # main() = backfill (10-25-25 thru 10-25-26)
     # main_incremental() = new hourly data
 
-    main_backfill()  # uncomment for backfill
+    main()  # uncomment for backfill
     # main_incremental() # uncomment for incremental

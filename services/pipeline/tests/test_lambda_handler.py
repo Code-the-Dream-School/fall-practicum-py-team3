@@ -1,42 +1,31 @@
-# mock
-# ===============================
-# TEST 1
-# def test_handler_runs_backfill(monkeypatch):
-#     called = []
+import pytest
+from pipeline.aws.lambda_handler import lambda_handler
 
-#     monkeypatch.setattr(
-#         lambda_handler,
-#         "run_backfill",
-#         lambda: called.append("backfill")
-#     )
-
-#     result = lambda_handler.lambda_handler({"mode": "backfill"}, None)
-
-#     assert called == ["backfill"]
-#     assert result == {"status": "ok", "mode": "backfill"}
-
-# # ===============================
-# # TEST 2
-# def test_handler_runs_incremental(monkeypatch):
-#     called = []
-
-#     monkeypatch.setattr(
-#         lambda_handler,
-#         "run_incremental",
-#         lambda: called.append("incremental")
-#     )
-
-#     result = lambda_handler.lambda_handler(
-#         {"mode": "incremental"}, None
-#     )
-
-#     assert called == ["incremental"]
-#     assert result == {"status": "ok", "mode": "incremental"}
-
-# # ===============================
-# # TEST 3
-# def test_handler_rejects_invalid_mode():
-#     with pytest.raises(ValueError):
-#         lambda_handler.lambda_handler(
-#             {"mode": "invalid"}, None
-#         )
+def test_lambda_handler(monkeypatch):
+    calls = []
+    
+    monkeypatch.setattr(
+        "pipeline.aws.lambda_handler.main",
+        lambda: calls.append("raw")
+    )
+    monkeypatch.setattr(
+        "pipeline.aws.lambda_handler.load_gold",
+        lambda: calls.append("gold")
+    )
+    monkeypatch.setattr(
+        "pipeline.aws.lambda_handler.load_insight",
+        lambda: calls.append("insight")
+    )
+    
+    # sample event
+    event = {}
+    
+    # call handler
+    response = lambda_handler(event, None)
+    
+    # check response
+    assert response["statusCode"] == 200
+    assert response["body"] == "ok"
+    
+    # check execution order
+    assert calls == ["raw", "gold", "insight"]

@@ -1,3 +1,5 @@
+from pipeline.load.load import main
+from pipeline.load.load_gold import load_gold
 from pipeline.load.load_insight import load_insight
 from pipeline.log import get_logger
 
@@ -11,14 +13,21 @@ logger = get_logger(__name__)
 def lambda_handler(event, context):
 
     try:
-        logger.info("Starting insight load.")
+        logger.info("Starting pipeline.")
 
+        # calls extraction and load raw table
+        main()
+        
+        # calls transformation and load gold table
+        load_gold()
+
+        # transform hourly into daily data and load daily insight table
         load_insight()
+        
+        logger.info("Pipeline completed successfully.")
 
-        logger.info("Insight load completed.")
-
-        return {"statusCode": 200, "body": "Insight load completed successfully."}
+        return {"statusCode": 200, "body": "ok"}
 
     except Exception:
-        logger.exception("Daily insight load failed.")
+        logger.exception("Pipeline failed to complete.")
         raise
