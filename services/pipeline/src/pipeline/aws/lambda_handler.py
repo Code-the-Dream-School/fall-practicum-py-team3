@@ -17,13 +17,13 @@ def lambda_handler(event, context):
 
         # calls extraction and load raw table
         main()
-        
+
         # calls transformation and load gold table
         load_gold()
 
         # transform hourly into daily data and load daily insight table
         load_insight()
-        
+
         logger.info("Pipeline completed successfully.")
 
         return {"statusCode": 200, "body": "ok"}
