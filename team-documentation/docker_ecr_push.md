@@ -26,10 +26,18 @@ The base image has a built in Lambda emulator, so you can test before pushing. D
 docker run -p 9000:8080 city-air-tracker:test
 ```
 
-2. In a second terminal, send it a test event:
+2. In a second terminal, send it a test event.
+
+Windows (PowerShell):
 
 ```
 curl.exe -X POST "http://localhost:9000/2015-03-31/functions/function/invocations" -d "{}"
+```
+
+Mac or Linux:
+
+```
+curl -X POST "http://localhost:9000/2015-03-31/functions/function/invocations" -d "{}"
 ```
 
 You should get back something like:
