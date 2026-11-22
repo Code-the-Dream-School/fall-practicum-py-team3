@@ -11,17 +11,13 @@ logger = get_logger(__name__)
 def lambda_handler(event, context):
 
     try:
-
         logger.info("Starting insight load.")
-        
+
         load_insight()
 
         logger.info("Insight load completed.")
 
-        return {
-            "statusCode": 200,
-            "body": "Insight load completed successfully."    
-        }
+        return {"statusCode": 200, "body": "Insight load completed successfully."}
 
     except Exception:
         logger.exception("Daily insight load failed.")
