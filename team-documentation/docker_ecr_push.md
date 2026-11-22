@@ -39,3 +39,43 @@ You should get back something like:
 ```
 
 3. Stop the container with Ctrl+C in the first terminal. If you get a "port already in use" error next time, an old container is still running. Stop it in Docker Desktop.
+
+## Push to ECR
+
+Our repo: `375124020099.dkr.ecr.us-east-2.amazonaws.com/fall-practicum-py-team3`
+
+Use your own tag (your first name, lowercase) so we don't overwrite each other. Replace `<yourname>` below.
+
+1. Log in to ECR:
+
+```
+aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 375124020099.dkr.ecr.us-east-2.amazonaws.com
+```
+
+You should see `Login Succeeded`.
+
+2. Build for Lambda from the repo root:
+
+```
+docker build --platform linux/amd64 --provenance=false -t fall-practicum-py-team3:<yourname> .
+```
+
+3. Tag the image for ECR:
+
+```
+docker tag fall-practicum-py-team3:<yourname> 375124020099.dkr.ecr.us-east-2.amazonaws.com/fall-practicum-py-team3:<yourname>
+```
+
+4. Push it:
+
+```
+docker push 375124020099.dkr.ecr.us-east-2.amazonaws.com/fall-practicum-py-team3:<yourname>
+```
+
+5. Check it landed:
+
+```
+aws ecr describe-images --repository-name fall-practicum-py-team3 --region us-east-2
+```
+
+You should see an entry with your tag.
