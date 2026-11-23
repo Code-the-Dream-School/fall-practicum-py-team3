@@ -4,7 +4,7 @@ from pipeline.aws.lambda_handler import lambda_handler
 def test_lambda_handler(monkeypatch):
     calls = []
 
-    monkeypatch.setattr("pipeline.aws.lambda_handler.main", lambda: calls.append("raw"))
+    monkeypatch.setattr("pipeline.aws.lambda_handler.load_raw_backfill", lambda: calls.append("raw"))
     monkeypatch.setattr("pipeline.aws.lambda_handler.load_gold", lambda: calls.append("gold"))
     monkeypatch.setattr("pipeline.aws.lambda_handler.load_insight", lambda: calls.append("insight"))
 
