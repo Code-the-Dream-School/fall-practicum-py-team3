@@ -1,4 +1,4 @@
-from pipeline.load.load import main
+from pipeline.load.load import load_raw_backfill
 from pipeline.load.load_gold import load_gold
 from pipeline.load.load_insight import load_insight
 from pipeline.log import get_logger
@@ -16,7 +16,7 @@ def lambda_handler(event, context):
         logger.info("Starting pipeline.")
 
         # calls extraction and load raw table
-        main()
+        load_raw_backfill()
 
         # calls transformation and load gold table
         load_gold()

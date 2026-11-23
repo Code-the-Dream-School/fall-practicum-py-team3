@@ -28,7 +28,7 @@ def load_raw(records):
 
 
 # incremental
-def main_incremental():
+def load_raw_incremental():
     # get next extraction window
     window = get_incremental_window()
 
@@ -78,7 +78,7 @@ def main_incremental():
         raise
 
 
-def main():
+def load_raw_backfill():
     run_id = start_run(
         run_mode="backfill",
         window_start=datetime.fromtimestamp(1761350400, UTC).isoformat(),
@@ -119,8 +119,8 @@ def main():
 if __name__ == "__main__":
     # !!! PLEASE READ BELOW !!!
     # run ONE mode at a time
-    # main() = backfill (10-25-25 thru 10-25-26)
-    # main_incremental() = new hourly data
+    # load_raw_backfill() = backfill (10-25-25 thru 10-25-26)
+    # load_raw_incremental() = new hourly data
 
-    main()  # uncomment for backfill
-    # main_incremental() # uncomment for incremental
+    load_raw_backfill  # uncomment for backfill
+    # load_raw_incremental() # uncomment for incremental
