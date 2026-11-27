@@ -1,5 +1,7 @@
 import boto3
+
 from pipeline.aws.lambda_handler import lambda_handler
+
 
 def cloud_alarm(function_name, region):
     cloudwatch = boto3.client("cloudwatch", region_name=region)
