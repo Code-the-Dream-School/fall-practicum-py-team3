@@ -1,6 +1,5 @@
 import boto3
-from hello_world import lambda_handler as handler
-
+from pipeline.aws.lambda_handler import lambda_handler
 
 def cloud_alarm(function_name, region):
     cloudwatch = boto3.client("cloudwatch", region_name=region)
@@ -17,5 +16,5 @@ def cloud_alarm(function_name, region):
     )
 
 
-cloud_alarm(handler.__name__, "us-east-2")
-print(f"CloudWatch accepted the alarm: {handler.__name__}-errors")
+cloud_alarm(lambda_handler.__name__, "us-east-2")
+print(f"CloudWatch accepted the alarm: {lambda_handler.__name__}-errors")
