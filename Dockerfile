@@ -16,5 +16,5 @@ RUN pip install -r requirements.txt
 COPY pyproject.toml . 
 COPY services/pipeline/src/ services/pipeline/src/
 RUN pip install .
-# Handler: package.file.function (waiting for Sumna to confirm)
-CMD ["pipeline.aws.hello_world.lambda_handler"]
+# Handler: package.file.function
+CMD ["pipeline.aws.lambda_handler.lambda_handler"]
