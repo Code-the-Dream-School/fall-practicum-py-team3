@@ -8,7 +8,6 @@ How the pipeline is deployed to AWS Lambda, and what a teammate needs to reprodu
 | ------------------- | ------------------------ | ----------------------------------------------------------------------- |
 | ECR repository      | fall-practicum-py-team3  | Stores the Docker image of the pipeline                                 |
 | Lambda function     | city-air-tracker-etl     | Runs the pipeline from that image                                       |
-| IAM role            | TODO                     | Lets the Lambda run and write logs                                      |
 | EventBridge trigger | TODO                     | Starts the Lambda (one time run for deployment)                         |
 | CloudWatch alarm    | `<function-name>-errors` | Goes into ALARM if the Lambda has 1 or more errors in a 5 minute period |
 
@@ -57,10 +56,3 @@ See `docker_ecr_push.md` for the build, local test, and push steps.
 
 The Dockerfile `CMD` tells Lambda which function to run, in the form `package.file.function`.
 Handler: `pipeline.aws.lambda_handler.lambda_handler`
-
-## Known issues and open questions
-
-- TODO: final Lambda function name.
-- TODO: real handler path (waiting on Sumna to confirm).
-- The alarm has no notification action yet, so nobody is alerted when it fires. It only shows in CloudWatch, Alarms.
-- TODO: confirm the trigger type (one time run vs repeating schedule).
